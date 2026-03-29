@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
 import { formatMatchDate } from '../../../lib/dateUtils';
 import { matchesApi } from '../../../lib/api';
@@ -32,6 +31,11 @@ export default function MatchDetailPage() {
   const resultColor = flaWon ? 'var(--green)' : drew ? 'var(--gold)' : 'var(--red-primary)';
   const resultLabel = flaWon ? 'VITÓRIA' : drew ? 'EMPATE' : 'DERROTA';
 
+  // Bagre: only players with the single worst rating (can be tie)
+  const rated = players.filter(p => p.average_rating !== null);
+  const worstRating = rated.length ? Math.min(...rated.map(p => parseFloat(p.average_rating))) : null;
+  const bagrePlayers = worstRating !== null ? rated.filter(p => parseFloat(p.average_rating) === worstRating) : [];
+
   return (
     <div className="page-container fade-in" style={{ paddingTop: 32, paddingBottom: 80 }}>
       <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: 13, marginBottom: 24, fontFamily: 'Barlow Condensed', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -42,25 +46,23 @@ export default function MatchDetailPage() {
       <div className="card" style={{ marginBottom: 28, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: resultColor }} />
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-              <span className="badge badge-red">{match.championship}</span>
-              {match.round && <span className="badge badge-gray">{match.round}</span>}
-              <span className="badge" style={{ background: `${resultColor}20`, color: resultColor, border: `1px solid ${resultColor}40` }}>{resultLabel}</span>
-              <span className="badge badge-gray">
-                {match.is_home ? <><Home size={10} /> Casa</> : <><Plane size={10} /> Fora</>}
-              </span>
-            </div>
-            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-              {formatMatchDate(match.match_date, "EEEE, dd 'de' MMMM 'de' yyyy")}
-              {match.stadium && ` • ${match.stadium}`}
-            </div>
+        {/* Date + badges on top */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+            {formatMatchDate(match.match_date, "EEEE, dd 'de' MMMM 'de' yyyy")}
+            {match.stadium && ` • ${match.stadium}`}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <span className="badge badge-red">{match.championship}</span>
+            {match.round && <span className="badge badge-gray">{match.round}</span>}
+            <span className="badge" style={{ background: `${resultColor}20`, color: resultColor, border: `1px solid ${resultColor}40` }}>{resultLabel}</span>
+            <span className="badge badge-gray">{match.is_home ? <><Home size={10} /> Casa</> : <><Plane size={10} /> Fora</>}</span>
           </div>
         </div>
 
         {/* Score */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32, padding: '16px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32, padding: '8px 0 20px' }}>
+          {/* Flamengo */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 64, height: 64, borderRadius: 12, overflow: 'hidden', background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <img src="/logos/flamengo.png" alt="Flamengo" style={{ width: 52, height: 52, objectFit: 'contain' }} onError={e => { e.target.style.display='none'; }} />
@@ -74,6 +76,7 @@ export default function MatchDetailPage() {
             </div>
           </div>
 
+          {/* Opponent */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 64, height: 64, borderRadius: 12, overflow: 'hidden', background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {match.opponent_logo
@@ -84,6 +87,30 @@ export default function MatchDetailPage() {
             <span style={{ fontFamily: 'Bebas Neue', fontSize: 20 }}>{match.opponent_name}</span>
           </div>
         </div>
+
+        {/* Team avg + MVP below score */}
+        {highlights && (highlights.team_avg > 0 || highlights.mvp) && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 24, paddingTop: 16, borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
+            {highlights.team_avg > 0 && (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 2 }}>Média do Time</div>
+                <div style={{ fontFamily: 'Bebas Neue', fontSize: 36, color: getRatingColor(highlights.team_avg), lineHeight: 1 }}>
+                  {Number(highlights.team_avg).toFixed(2)}
+                </div>
+              </div>
+            )}
+            {highlights.mvp && (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginBottom: 2 }}>
+                  <Star size={12} color="var(--gold)" fill="var(--gold)" />
+                  <span style={{ fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--gold)' }}>MVP do Jogo</span>
+                </div>
+                <div style={{ fontFamily: 'Bebas Neue', fontSize: 22 }}>{highlights.mvp.player_name}</div>
+                <div style={{ fontSize: 13, color: 'var(--gold)', fontWeight: 600 }}>{Number(highlights.mvp.average_rating).toFixed(1)}</div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Goals & Assists */}
         {(goals?.length > 0 || assists?.length > 0) && (
@@ -122,43 +149,17 @@ export default function MatchDetailPage() {
         )}
       </div>
 
-      {/* Highlights */}
-      {highlights && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 28 }}>
-          {highlights.mvp && (
-            <div className="card" style={{ textAlign: 'center', borderColor: 'rgba(245,200,66,0.25)', background: 'rgba(245,200,66,0.04)' }}>
-              <Star size={20} color="var(--gold)" fill="var(--gold)" style={{ marginBottom: 6 }} />
-              <div style={{ fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--gold)', marginBottom: 4 }}>MVP do Jogo</div>
-              <div style={{ fontFamily: 'Bebas Neue', fontSize: 18 }}>{highlights.mvp.player_name}</div>
-              <div style={{ fontSize: 13, color: 'var(--gold)', fontWeight: 600 }}>{Number(highlights.mvp.average_rating).toFixed(1)}</div>
-            </div>
-          )}
-          {highlights.bagre && (
-            <div className="card" style={{ textAlign: 'center', borderColor: 'rgba(232,0,28,0.2)' }}>
-              <TrendingDown size={20} color="var(--red-primary)" style={{ marginBottom: 6 }} />
-              <div style={{ fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--red-primary)', marginBottom: 4 }}>Bagre do Jogo</div>
-              <div style={{ fontFamily: 'Bebas Neue', fontSize: 18 }}>{highlights.bagre.player_name}</div>
-              <div style={{ fontSize: 13, color: 'var(--red-primary)', fontWeight: 600 }}>{Number(highlights.bagre.average_rating).toFixed(1)}</div>
-            </div>
-          )}
-          {highlights.team_avg > 0 && (
-            <div className="card" style={{ textAlign: 'center' }}>
-              <Trophy size={20} color="var(--text-secondary)" style={{ marginBottom: 6 }} />
-              <div style={{ fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 4 }}>Média do Time</div>
-              <div style={{ fontFamily: 'Bebas Neue', fontSize: 32, color: getRatingColor(highlights.team_avg) }}>
-                {Number(highlights.team_avg).toFixed(2)}
-              </div>
-            </div>
-          )}
-          {highlights.bruninho_avg > 0 && (
-            <div className="card" style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 20, marginBottom: 6 }}>🎙️</div>
-              <div style={{ fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 2 }}>Simões</div>
-              <div style={{ fontFamily: 'Bebas Neue', fontSize: 26 }}>{Number(highlights.simoes_avg).toFixed(2)}</div>
-              <div style={{ fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', marginBottom: 2, marginTop: 8 }}>Bruninho</div>
-              <div style={{ fontFamily: 'Bebas Neue', fontSize: 26 }}>{Number(highlights.bruninho_avg).toFixed(2)}</div>
-            </div>
-          )}
+      {/* Bruninho vs Simoes avgs */}
+      {highlights && highlights.bruninho_avg > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 28, maxWidth: 400 }}>
+          <div className="card" style={{ textAlign: 'center', padding: '14px 16px' }}>
+            <div style={{ fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--red-primary)', marginBottom: 4 }}>🎤 Simões</div>
+            <div style={{ fontFamily: 'Bebas Neue', fontSize: 30 }}>{Number(highlights.simoes_avg).toFixed(2)}</div>
+          </div>
+          <div className="card" style={{ textAlign: 'center', padding: '14px 16px' }}>
+            <div style={{ fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--blue)', marginBottom: 4 }}>🎙️ Bruninho</div>
+            <div style={{ fontFamily: 'Bebas Neue', fontSize: 30 }}>{Number(highlights.bruninho_avg).toFixed(2)}</div>
+          </div>
         </div>
       )}
 
@@ -173,35 +174,46 @@ export default function MatchDetailPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {/* Header — Simões primeiro */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 120px 120px', padding: '8px 16px', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px 100px', padding: '8px 16px', gap: 8 }}>
               {['Jogador', 'Simões', 'Bruninho', 'Média'].map(h => (
                 <span key={h} style={{ fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', textAlign: h === 'Jogador' ? 'left' : 'center' }}>{h}</span>
               ))}
             </div>
 
-            {players.map(player => (
-              <Link key={player.player_id} href={`/jogadores/${player.player_id}`}>
-                <div className="card" style={{ cursor: 'pointer' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 120px 120px', alignItems: 'center', gap: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Bebas Neue', fontSize: 14, color: 'var(--text-muted)', flexShrink: 0 }}>
-                        {player.number || '#'}
+            {players.map(player => {
+              const isBagre = bagrePlayers.some(b => b.player_id === player.player_id);
+              const isMvp = highlights?.mvp?.player_name === player.player_name;
+              return (
+                <Link key={player.player_id} href={`/jogadores/${player.player_id}`}>
+                  <div className="card" style={{ cursor: 'pointer' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px 100px', alignItems: 'center', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        {/* Player photo or number */}
+                        <div style={{ width: 40, height: 40, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {player.photo_url ? (
+                            <img src={player.photo_url} alt={player.player_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+                          ) : null}
+                          <span style={{ display: player.photo_url ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontFamily: 'Bebas Neue', fontSize: 14, color: 'var(--text-muted)' }}>
+                            {player.number || '#'}
+                          </span>
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 15 }}>{player.player_name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', letterSpacing: '0.04em' }}>{player.position_in_match || player.position}</div>
+                        </div>
+                        {isMvp && <span className="badge badge-gold" style={{ marginLeft: 4 }}>⭐ Craque</span>}
+                        {isBagre && !isMvp && <span className="badge badge-red" style={{ marginLeft: 4 }}>🐟 Bagre</span>}
                       </div>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: 15 }}>{player.player_name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', letterSpacing: '0.04em' }}>{player.position_in_match || player.position}</div>
-                      </div>
-                      {player.tag === 'craque' && <span className="badge badge-gold" style={{ marginLeft: 4 }}>⭐ Craque</span>}
-                      {player.tag === 'bagre' && <span className="badge badge-red" style={{ marginLeft: 4 }}>🐟 Bagre</span>}
+                      {/* Simões primeiro */}
+                      <div style={{ display: 'flex', justifyContent: 'center' }}><RatingBadge value={player.simoes_rating} size="sm" /></div>
+                      <div style={{ display: 'flex', justifyContent: 'center' }}><RatingBadge value={player.bruninho_rating} size="sm" /></div>
+                      <div style={{ display: 'flex', justifyContent: 'center' }}><RatingBadge value={player.average_rating} size="sm" /></div>
                     </div>
-                    {/* Simões primeiro */}
-                    <div style={{ display: 'flex', justifyContent: 'center' }}><RatingBadge value={player.simoes_rating} size="sm" /></div>
-                    <div style={{ display: 'flex', justifyContent: 'center' }}><RatingBadge value={player.bruninho_rating} size="sm" /></div>
-                    <div style={{ display: 'flex', justifyContent: 'center' }}><RatingBadge value={player.average_rating} size="md" /></div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

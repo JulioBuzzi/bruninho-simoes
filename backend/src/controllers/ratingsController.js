@@ -105,7 +105,7 @@ const getStats = async (req, res) => {
       JOIN matches m ON m.id = r.match_id
       WHERE m.season = $1
       GROUP BY p.id, p.name, p.position, p.photo_url
-      HAVING COUNT(r.id) >= 1
+      HAVING COUNT(r.id) >= 3
       ORDER BY avg_overall DESC NULLS LAST
     `, [currentSeason]);
 

@@ -107,8 +107,16 @@ export default function StatisticsPage() {
                       >
                         <td style={{ padding: '12px 16px', textAlign: 'center', fontFamily: 'Bebas Neue', fontSize: 18, color: i < 3 ? 'var(--gold)' : 'var(--text-muted)' }}>{i + 1}</td>
                         <td style={{ padding: '12px 16px' }}>
-                          <Link href={`/jogadores/${player.id}`} style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                            {player.name}
+                          <Link href={`/jogadores/${player.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-primary)' }}>
+                            {player.photo_url ? (
+                              <img src={player.photo_url} alt={player.name} style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--border)' }}
+                                onError={e => { e.target.style.display='none'; }} />
+                            ) : (
+                              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Bebas Neue', fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>
+                                {player.name?.slice(0,2).toUpperCase()}
+                              </div>
+                            )}
+                            <span style={{ fontWeight: 600 }}>{player.name}</span>
                           </Link>
                         </td>
                         <td style={{ padding: '12px 16px' }}>

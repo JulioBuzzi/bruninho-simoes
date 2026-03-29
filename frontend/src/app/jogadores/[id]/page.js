@@ -35,12 +35,17 @@ export default function PlayerDetailPage() {
       {/* Player header */}
       <div className="card" style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
         <div style={{
-          width: 80, height: 80, borderRadius: 16, flexShrink: 0,
-          background: 'rgba(232,0,28,0.1)', border: '2px solid rgba(232,0,28,0.25)',
+          width: 80, height: 80, borderRadius: 16, flexShrink: 0, overflow: 'hidden',
+          background: 'var(--bg-secondary)', border: '2px solid var(--border)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'Bebas Neue', fontSize: 28, color: 'var(--red-primary)',
         }}>
-          {player.number || '?'}
+          {player.photo_url ? (
+            <img src={player.photo_url} alt={player.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+          ) : null}
+          <span style={{ display: player.photo_url ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Bebas Neue', fontSize: 28, color: 'var(--red-primary)', width: '100%', height: '100%' }}>
+            {player.number || '?'}
+          </span>
         </div>
         <div style={{ flex: 1 }}>
           <h1 style={{ fontSize: 48, lineHeight: 1, marginBottom: 6 }}>{player.name}</h1>
