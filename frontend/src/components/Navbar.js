@@ -26,12 +26,27 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
-            width: 38, height: 38, borderRadius: 8,
+            width: 44, height: 44, borderRadius: 10, overflow: 'hidden', flexShrink: 0,
             background: 'var(--red-primary)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'Bebas Neue', fontSize: 18, color: 'white', letterSpacing: 1,
             boxShadow: '0 0 16px var(--red-glow)',
-          }}>B&S</div>
+          }}>
+            <img
+              src="/bruninhoesimoes.png"
+              alt="Bruninho e Simões"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              onError={e => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            {/* Fallback se imagem não carregar */}
+            <span style={{
+              display: 'none', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'Bebas Neue', fontSize: 14, color: 'white', letterSpacing: 1,
+              width: '100%', height: '100%',
+            }}>B&S</span>
+          </div>
           <div>
             <div style={{ fontFamily: 'Bebas Neue', fontSize: 20, letterSpacing: '0.05em', lineHeight: 1 }}>
               Bruninho <span style={{ color: 'var(--red-primary)' }}>&</span> Simões

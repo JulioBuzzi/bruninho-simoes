@@ -10,6 +10,27 @@ import { Plus, LogOut, Settings, Save, Trash2, ChevronDown, ChevronUp } from 'lu
 const CHAMPIONSHIPS = ['Brasileirão', 'Carioca', 'Libertadores', 'Copa do Brasil', 'Supercopa', 'Recopa', 'Amistoso'];
 const POSITIONS = ['Goleiro', 'Zagueiro', 'Lateral Direito', 'Lateral Esquerdo', 'Volante', 'Meia', 'Atacante'];
 
+// Ordem de exibição na tabela de notas
+const POSITION_SORT = {
+  'Goleiro': 1,
+  'Lateral Direito': 2,
+  'Zagueiro': 3,
+  'Lateral Esquerdo': 4,
+  'Volante': 5,
+  'Meia': 6,
+  'Atacante': 7,
+};
+
+function sortPlayersByPosition(players) {
+  return [...players].sort((a, b) => {
+    const posA = POSITION_SORT[a.position_in_match || a.position] ?? 99;
+    const posB = POSITION_SORT[b.position_in_match || b.position] ?? 99;
+    if (posA !== posB) return posA - posB;
+    return (a.player_name || a.name || '').localeCompare(b.player_name || b.name || '');
+  });
+}
+
+
 export default function AdminPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -361,7 +382,7 @@ function RatingsTab({ matches, players, onRefresh }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {matchData.players.map((player, i) => {
+                  {sortPlayersByPosition(matchData.players).map((player, i) => {
                     const r = ratings[player.player_id] || { bruninho: '', simoes: '' };
                     const avg = r.bruninho !== '' && r.simoes !== '' ? ((parseFloat(r.bruninho) + parseFloat(r.simoes)) / 2).toFixed(2) : '—';
                     return (

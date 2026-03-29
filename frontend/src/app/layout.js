@@ -5,7 +5,11 @@ import { Toaster } from 'react-hot-toast';
 export const metadata = {
   title: 'Bruninho e Simões | Notas do Flamengo',
   description: 'Sistema de notas dos jogadores do Flamengo pelo canal Bruninho e Simões',
-  icons: { icon: '/favicon.ico' }
+  icons: {
+    icon: '/bruninhoesimoes.png',
+    shortcut: '/bruninhoesimoes.png',
+    apple: '/bruninhoesimoes.png',
+  },
 };
 
 export default function RootLayout({ children }) {
