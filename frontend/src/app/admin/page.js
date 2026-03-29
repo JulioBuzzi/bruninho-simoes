@@ -128,13 +128,24 @@ function MatchesTab({ matches, teams, players, onRefresh }) {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Helpers para gols e assistências
+  const addGoal = () => setForm(p => ({ ...p, goals: [...p.goals, { player_id: '', minute: '', is_own_goal: false, is_penalty: false }] }));
+  const removeGoal = (i) => setForm(p => ({ ...p, goals: p.goals.filter((_, idx) => idx !== i) }));
+  const updateGoal = (i, field, val) => setForm(p => ({ ...p, goals: p.goals.map((g, idx) => idx === i ? { ...g, [field]: val } : g) }));
+
+  const addAssist = () => setForm(p => ({ ...p, assists: [...p.assists, { player_id: '', minute: '' }] }));
+  const removeAssist = (i) => setForm(p => ({ ...p, assists: p.assists.filter((_, idx) => idx !== i) }));
+  const updateAssist = (i, field, val) => setForm(p => ({ ...p, assists: p.assists.map((a, idx) => idx === i ? { ...a, [field]: val } : a) }));
+
   const handleSubmit = async () => {
-    if (!form.match_date || !form.opponent_id) {
-      toast.error('Preencha data e adversário'); return;
-    }
+    if (!form.match_date || !form.opponent_id) { toast.error('Preencha data e adversário'); return; }
     setLoading(true);
     try {
-      await matchesApi.create(form);
+      await matchesApi.create({
+        ...form,
+        goals: form.goals.filter(g => g.player_id || g.is_own_goal),
+        assists: form.assists.filter(a => a.player_id),
+      });
       toast.success('Jogo criado!');
       setForm(emptyForm);
       setShowForm(false);
@@ -153,6 +164,8 @@ function MatchesTab({ matches, teams, players, onRefresh }) {
     } catch { toast.error('Erro ao remover'); }
   };
 
+  const activePlayers = players.filter(p => p.active);
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -165,7 +178,9 @@ function MatchesTab({ matches, teams, players, onRefresh }) {
       {showForm && (
         <div className="card" style={{ marginBottom: 24 }}>
           <h3 style={{ fontSize: 22, marginBottom: 20 }}>Cadastrar Jogo</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+
+          {/* Campos principais */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
             <div>
               <label>Data</label>
               <input type="date" className="input" value={form.match_date} onChange={e => setForm(p => ({ ...p, match_date: e.target.value }))} />
@@ -212,29 +227,29 @@ function MatchesTab({ matches, teams, players, onRefresh }) {
             </div>
           </div>
 
-          {/* Starters */}
-          <div style={{ marginTop: 24 }}>
-            <label style={{ display: 'block', marginBottom: 12 }}>Titulares (selecione 11)</label>
+          {/* Titulares */}
+          <div style={{ marginBottom: 24, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <label style={{ margin: 0 }}>Titulares</label>
+              <span style={{ fontSize: 12, color: form.starters.length === 11 ? 'var(--green)' : 'var(--text-muted)' }}>
+                {form.starters.length}/11 selecionados
+              </span>
+            </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {players.filter(p => p.active).map(player => {
+              {activePlayers.map(player => {
                 const selected = form.starters.find(s => s.player_id === player.id);
                 return (
                   <button key={player.id} type="button" onClick={() => {
                     setForm(prev => {
                       const exists = prev.starters.find(s => s.player_id === player.id);
-                      return {
-                        ...prev,
-                        starters: exists
-                          ? prev.starters.filter(s => s.player_id !== player.id)
-                          : [...prev.starters, { player_id: player.id, position: player.position }]
-                      };
+                      return { ...prev, starters: exists ? prev.starters.filter(s => s.player_id !== player.id) : [...prev.starters, { player_id: player.id, position: player.position }] };
                     });
                   }} style={{
-                    padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                    padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
                     background: selected ? 'var(--red-primary)' : 'var(--bg-secondary)',
                     color: selected ? 'white' : 'var(--text-secondary)',
                     fontFamily: 'Barlow', fontSize: 13, fontWeight: selected ? 600 : 400,
-                    border: selected ? 'none' : '1px solid var(--border)',
+                    border: selected ? '1px solid var(--red-primary)' : '1px solid var(--border)',
                     transition: 'all 0.15s',
                   }}>
                     {player.number ? `#${player.number} ` : ''}{player.name}
@@ -242,16 +257,77 @@ function MatchesTab({ matches, teams, players, onRefresh }) {
                 );
               })}
             </div>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
-              {form.starters.length}/11 selecionados
-            </p>
           </div>
 
-          <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+          {/* Gols */}
+          <div style={{ marginBottom: 24, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <label style={{ margin: 0 }}>⚽ Gols do Flamengo</label>
+              <button type="button" className="btn btn-ghost" style={{ fontSize: 12, padding: '4px 12px' }} onClick={addGoal}>
+                <Plus size={14} /> Adicionar Gol
+              </button>
+            </div>
+            {form.goals.length === 0 && (
+              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Nenhum gol adicionado.</p>
+            )}
+            {form.goals.map((goal, i) => (
+              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
+                <div style={{ flex: 2, minWidth: 160 }}>
+                  <select className="input" value={goal.player_id} onChange={e => updateGoal(i, 'player_id', e.target.value)}>
+                    <option value="">Gol Contra</option>
+                    {activePlayers.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div style={{ width: 80 }}>
+                  <input type="number" className="input" placeholder="Min." min="1" max="120"
+                    value={goal.minute} onChange={e => updateGoal(i, 'minute', e.target.value)} />
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, margin: 0, cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)', textTransform: 'none', letterSpacing: 0 }}>
+                  <input type="checkbox" checked={goal.is_penalty} onChange={e => updateGoal(i, 'is_penalty', e.target.checked)} />
+                  Pênalti
+                </label>
+                <button type="button" onClick={() => removeGoal(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red-primary)', padding: 4 }}>
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Assistências */}
+          <div style={{ marginBottom: 24, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <label style={{ margin: 0 }}>🎯 Assistências</label>
+              <button type="button" className="btn btn-ghost" style={{ fontSize: 12, padding: '4px 12px' }} onClick={addAssist}>
+                <Plus size={14} /> Adicionar Assistência
+              </button>
+            </div>
+            {form.assists.length === 0 && (
+              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Nenhuma assistência adicionada.</p>
+            )}
+            {form.assists.map((assist, i) => (
+              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10, flexWrap: 'wrap' }}>
+                <div style={{ flex: 2, minWidth: 160 }}>
+                  <select className="input" value={assist.player_id} onChange={e => updateAssist(i, 'player_id', e.target.value)}>
+                    <option value="">Selecione o jogador...</option>
+                    {activePlayers.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div style={{ width: 80 }}>
+                  <input type="number" className="input" placeholder="Min." min="1" max="120"
+                    value={assist.minute} onChange={e => updateAssist(i, 'minute', e.target.value)} />
+                </div>
+                <button type="button" onClick={() => removeAssist(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red-primary)', padding: 4 }}>
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 12 }}>
             <button className="btn btn-primary" onClick={handleSubmit} disabled={loading}>
               <Save size={16} /> {loading ? 'Salvando...' : 'Criar Jogo'}
             </button>
-            <button className="btn btn-ghost" onClick={() => setShowForm(false)}>Cancelar</button>
+            <button className="btn btn-ghost" onClick={() => { setForm(emptyForm); setShowForm(false); }}>Cancelar</button>
           </div>
         </div>
       )}
@@ -269,9 +345,7 @@ function MatchesTab({ matches, teams, players, onRefresh }) {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <Link href={`/jogos/${m.id}`} className="btn btn-ghost" style={{ fontSize: 12, padding: '6px 12px' }}>
-                Ver
-              </Link>
+              <Link href={`/jogos/${m.id}`} className="btn btn-ghost" style={{ fontSize: 12, padding: '6px 12px' }}>Ver</Link>
               <button className="btn btn-ghost" onClick={() => handleDelete(m.id)} style={{ fontSize: 12, padding: '6px 12px', color: 'var(--red-primary)' }}>
                 <Trash2 size={14} />
               </button>

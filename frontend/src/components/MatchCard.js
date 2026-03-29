@@ -65,7 +65,7 @@ export default function MatchCard({ match }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
               <div style={{
                 width: 40, height: 40, borderRadius: 8, overflow: 'hidden', flexShrink: 0,
-                background: 'rgba(232,0,28,0.1)', border: '1px solid rgba(232,0,28,0.2)',
+                background: 'var(--bg-secondary)', border: '1px solid var(--border)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 <img

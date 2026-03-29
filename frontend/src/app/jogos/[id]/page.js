@@ -62,7 +62,7 @@ export default function MatchDetailPage() {
         {/* Score */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32, padding: '16px 0' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 64, height: 64, borderRadius: 12, overflow: 'hidden', background: 'rgba(232,0,28,0.1)', border: '2px solid rgba(232,0,28,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 64, height: 64, borderRadius: 12, overflow: 'hidden', background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <img src="/logos/flamengo.png" alt="Flamengo" style={{ width: 52, height: 52, objectFit: 'contain' }} onError={e => { e.target.style.display='none'; }} />
             </div>
             <span style={{ fontFamily: 'Bebas Neue', fontSize: 20 }}>Flamengo</span>
