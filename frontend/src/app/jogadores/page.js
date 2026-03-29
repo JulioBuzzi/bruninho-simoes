@@ -6,27 +6,23 @@ import RatingBadge from '../../components/RatingBadge';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { Users } from 'lucide-react';
 
-// Filtros exatos — sem usar .includes() que misturava laterais
-const POSITIONS = [
-  'Todos',
-  'Goleiro',
-  'Lateral Direito',
-  'Lateral Esquerdo',
-  'Zagueiro',
-  'Volante',
-  'Meia',
-  'Atacante',
-];
+const POSITIONS = ['Todos','Goleiro','Lateral Direito','Lateral Esquerdo','Zagueiro','Volante','Meia','Atacante'];
 
 function matchPosition(playerPos, filter) {
   if (filter === 'Todos') return true;
-  // Comparação exata (case-insensitive) para não misturar Lateral D com E
   return (playerPos || '').toLowerCase().trim() === filter.toLowerCase().trim();
+}
+
+function pluralJogos(n) {
+  const num = parseInt(n) || 0;
+  if (num === 0) return '0 jogos';
+  if (num === 1) return '1 jogo';
+  return `${num} jogos`;
 }
 
 export default function PlayersPage() {
   const [players, setPlayers] = useState([]);
-  const [stats, setStats] = useState([]);
+  const [stats, setStats]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [posFilter, setPosFilter] = useState('Todos');
   const currentYear = new Date().getFullYear();
@@ -41,11 +37,7 @@ export default function PlayersPage() {
     }).finally(() => setLoading(false));
   }, []);
 
-  const merged = players.map(p => {
-    const stat = stats.find(s => s.id === p.id);
-    return { ...p, ...stat };
-  });
-
+  const merged = players.map(p => ({ ...p, ...(stats.find(s => s.id === p.id) || {}) }));
   const filtered = merged.filter(p => matchPosition(p.position, posFilter));
 
   return (
@@ -56,7 +48,6 @@ export default function PlayersPage() {
       </div>
       <p style={{ color: 'var(--text-secondary)', marginBottom: 28 }}>Médias e desempenho na temporada atual.</p>
 
-      {/* Position filter */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 28 }}>
         {POSITIONS.map(pos => (
           <button key={pos} onClick={() => setPosFilter(pos)} className="btn" style={{
@@ -69,45 +60,37 @@ export default function PlayersPage() {
       </div>
 
       {loading ? <LoadingSpinner text="Carregando jogadores..." /> : (
-        <>
-          {filtered.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
-              Nenhum jogador encontrado para esta posição.
-            </div>
-          )}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
-            {filtered.map(player => (
-              <Link key={player.id} href={`/jogadores/${player.id}`}>
-                <div className="card" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div style={{
-                    width: 52, height: 52, borderRadius: 12, flexShrink: 0,
-                    background: 'var(--bg-secondary)', border: '2px solid var(--border)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'Bebas Neue', fontSize: 18, color: 'var(--text-secondary)',
-                  }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+          {filtered.map(player => (
+            <Link key={player.id} href={`/jogadores/${player.id}`}>
+              {/* Fixed-height card so all look the same */}
+              <div className="card" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, height: 88 }}>
+                {/* Photo or number */}
+                <div style={{ width: 52, height: 52, borderRadius: 12, flexShrink: 0, overflow: 'hidden', background: 'var(--bg-secondary)', border: '2px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {player.photo_url
+                    ? <img src={player.photo_url} alt={player.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+                    : null}
+                  <span style={{ display: player.photo_url ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontFamily: 'Bebas Neue', fontSize: 18, color: 'var(--text-secondary)' }}>
                     {player.number || '?'}
+                  </span>
+                </div>
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {player.name}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {player.name}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', letterSpacing: '0.04em' }}>
-                      {player.position}
-                    </div>
-                    {player.games > 0 && (
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                        {player.games} jogos
-                      </div>
-                    )}
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', letterSpacing: '0.04em', marginBottom: 2 }}>
+                    {player.position}
                   </div>
-                  <div>
-                    <RatingBadge value={player.avg_overall} size="sm" />
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                    {pluralJogos(player.games)}
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
-        </>
+                <RatingBadge value={player.avg_overall} size="sm" />
+              </div>
+            </Link>
+          ))}
+        </div>
       )}
     </div>
   );
