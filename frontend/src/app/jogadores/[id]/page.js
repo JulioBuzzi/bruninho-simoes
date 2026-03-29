@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatMatchDate } from '../../../lib/dateUtils';
 import { playersApi } from '../../../lib/api';
 import RatingBadge from '../../../components/RatingBadge';
 import LoadingSpinner from '../../../components/LoadingSpinner';
@@ -93,7 +92,7 @@ export default function PlayerDetailPage() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {history.map(h => {
-            const date = new Date(h.match_date + 'T12:00:00');
+
             const flaWon = h.flamengo_goals > h.opponent_goals;
             const drew = h.flamengo_goals === h.opponent_goals;
             const rc = flaWon ? 'var(--green)' : drew ? 'var(--gold)' : 'var(--red-primary)';
@@ -105,7 +104,7 @@ export default function PlayerDetailPage() {
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
                       <span className="badge badge-gray" style={{ fontSize: 10 }}>{h.championship}</span>
                       <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                        {format(date, "dd/MM/yyyy", { locale: ptBR })}
+                        {formatMatchDate(h.match_date, 'dd/MM/yyyy')}
                       </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

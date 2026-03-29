@@ -152,6 +152,8 @@ A estrutura esperada no repositório é:
 
 > 💡 **Dica:** No plano gratuito do Render, a instância "hiberna" após 15 minutos de inatividade. O primeiro request pode demorar ~30s para "acordar". Considere usar o [UptimeRobot](https://uptimerobot.com) (gratuito) para fazer ping a cada 14 min e manter a instância ativa.
 
+https://bruninho-simoes-api.onrender.com
+
 ---
 
 ## 🌐 PASSO 4 — Frontend no Vercel

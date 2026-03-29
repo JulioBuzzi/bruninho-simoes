@@ -7,7 +7,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import toast from 'react-hot-toast';
 import { Plus, LogOut, Settings, Save, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 
-const CHAMPIONSHIPS = ['Brasileirão', 'Libertadores', 'Copa do Brasil', 'Supercopa', 'Recopa', 'Amistoso'];
+const CHAMPIONSHIPS = ['Brasileirão', 'Carioca', 'Libertadores', 'Copa do Brasil', 'Supercopa', 'Recopa', 'Amistoso'];
 const POSITIONS = ['Goleiro', 'Zagueiro', 'Lateral Direito', 'Lateral Esquerdo', 'Volante', 'Meia', 'Atacante'];
 
 export default function AdminPage() {
@@ -355,8 +355,8 @@ function RatingsTab({ matches, players, onRefresh }) {
                   <tr style={{ background: 'var(--bg-secondary)' }}>
                     <th style={thStyle}>Jogador</th>
                     <th style={{ ...thStyle, textAlign: 'center' }}>Posição</th>
-                    <th style={{ ...thStyle, textAlign: 'center', color: '#448aff' }}>🎙️ Bruninho (0-10)</th>
                     <th style={{ ...thStyle, textAlign: 'center', color: 'var(--red-primary)' }}>🎤 Simões (0-10)</th>
+                    <th style={{ ...thStyle, textAlign: 'center', color: '#448aff' }}>🎙️ Bruninho (0-10)</th>
                     <th style={{ ...thStyle, textAlign: 'center' }}>Média</th>
                   </tr>
                 </thead>
@@ -379,8 +379,8 @@ function RatingsTab({ matches, players, onRefresh }) {
                         <td style={{ padding: '8px 16px', textAlign: 'center' }}>
                           <input
                             type="number" min="0" max="10" step="0.5" className="input"
-                            value={r.bruninho}
-                            onChange={e => setRatings(prev => ({ ...prev, [player.player_id]: { ...prev[player.player_id], bruninho: e.target.value } }))}
+                            value={r.simoes}
+                            onChange={e => setRatings(prev => ({ ...prev, [player.player_id]: { ...prev[player.player_id], simoes: e.target.value } }))}
                             style={{ width: 80, textAlign: 'center', margin: '0 auto' }}
                             placeholder="—"
                           />
@@ -388,8 +388,8 @@ function RatingsTab({ matches, players, onRefresh }) {
                         <td style={{ padding: '8px 16px', textAlign: 'center' }}>
                           <input
                             type="number" min="0" max="10" step="0.5" className="input"
-                            value={r.simoes}
-                            onChange={e => setRatings(prev => ({ ...prev, [player.player_id]: { ...prev[player.player_id], simoes: e.target.value } }))}
+                            value={r.bruninho}
+                            onChange={e => setRatings(prev => ({ ...prev, [player.player_id]: { ...prev[player.player_id], bruninho: e.target.value } }))}
                             style={{ width: 80, textAlign: 'center', margin: '0 auto' }}
                             placeholder="—"
                           />

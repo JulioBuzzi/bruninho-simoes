@@ -1,29 +1,28 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { MapPin, Star, TrendingDown, Home, Plane } from 'lucide-react';
+import { formatMatchDate } from '../lib/dateUtils';
+import { Star, Home, Plane } from 'lucide-react';
 
 const CHAMPIONSHIPS = {
-  'Brasileirão': { color: '#2ecc71', short: 'BRA' },
+  'Brasileirão':  { color: '#2ecc71', short: 'BRA' },
+  'Carioca':      { color: '#e74c3c', short: 'CAR' },
   'Libertadores': { color: '#f5c842', short: 'LIB' },
-  'Copa do Brasil': { color: '#3498db', short: 'CDB' },
-  'Supercopa': { color: '#e67e22', short: 'SUP' },
-  'Recopa': { color: '#9b59b6', short: 'REC' },
-  'Amistoso': { color: '#95a5a6', short: 'AMI' },
+  'Copa do Brasil':{ color: '#3498db', short: 'CDB' },
+  'Supercopa':    { color: '#e67e22', short: 'SUP' },
+  'Recopa':       { color: '#9b59b6', short: 'REC' },
+  'Amistoso':     { color: '#95a5a6', short: 'AMI' },
 };
 
 function getResultStyle(fla, opp) {
-  if (fla > opp) return { label: 'V', color: 'var(--green)' };
-  if (fla < opp) return { label: 'D', color: 'var(--red-primary)' };
-  return { label: 'E', color: 'var(--gold)' };
+  if (fla > opp) return { color: 'var(--green)' };
+  if (fla < opp) return { color: 'var(--red-primary)' };
+  return { color: 'var(--gold)' };
 }
 
 export default function MatchCard({ match }) {
   const result = getResultStyle(match.flamengo_goals, match.opponent_goals);
   const champ = CHAMPIONSHIPS[match.championship] || { color: '#888', short: '—' };
-  const matchDate = new Date(match.match_date + 'T12:00:00');
 
   return (
     <Link href={`/jogos/${match.id}`}>
@@ -62,14 +61,21 @@ export default function MatchCard({ match }) {
 
           {/* Score block */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14 }}>
-            {/* Flamengo side */}
+            {/* Flamengo */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
               <div style={{
-                width: 40, height: 40, borderRadius: 8,
+                width: 40, height: 40, borderRadius: 8, overflow: 'hidden', flexShrink: 0,
                 background: 'rgba(232,0,28,0.1)', border: '1px solid rgba(232,0,28,0.2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: 'Bebas Neue', fontSize: 13, color: 'var(--red-primary)',
-              }}>FLA</div>
+              }}>
+                <img
+                  src="/logos/flamengo.png"
+                  alt="Flamengo"
+                  style={{ width: 32, height: 32, objectFit: 'contain' }}
+                  onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                />
+                <span style={{ display: 'none', fontFamily: 'Bebas Neue', fontSize: 13, color: 'var(--red-primary)' }}>FLA</span>
+              </div>
               <span style={{ fontFamily: 'Bebas Neue', fontSize: 14, color: 'var(--text-secondary)' }}>
                 Flamengo
               </span>
@@ -77,57 +83,44 @@ export default function MatchCard({ match }) {
 
             {/* Score */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{
-                fontFamily: 'Bebas Neue', fontSize: 32,
-                color: result.color,
-                minWidth: 24, textAlign: 'center',
-              }}>
+              <span style={{ fontFamily: 'Bebas Neue', fontSize: 32, color: result.color, minWidth: 24, textAlign: 'center' }}>
                 {match.flamengo_goals}
               </span>
               <span style={{ color: 'var(--text-muted)', fontSize: 18, fontWeight: 300 }}>×</span>
-              <span style={{
-                fontFamily: 'Bebas Neue', fontSize: 32,
-                color: result.color,
-                minWidth: 24, textAlign: 'center',
-              }}>
+              <span style={{ fontFamily: 'Bebas Neue', fontSize: 32, color: result.color, minWidth: 24, textAlign: 'center' }}>
                 {match.opponent_goals}
               </span>
             </div>
 
-            {/* Opponent side */}
+            {/* Opponent */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'flex-end' }}>
               <span style={{ fontFamily: 'Bebas Neue', fontSize: 14, color: 'var(--text-secondary)', textAlign: 'right' }}>
                 {match.opponent_name}
               </span>
-              {match.opponent_logo ? (
-                <div style={{ width: 40, height: 40, position: 'relative', flexShrink: 0 }}>
-                  <Image
+              <div style={{ width: 40, height: 40, flexShrink: 0, position: 'relative', borderRadius: 8, overflow: 'hidden', background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {match.opponent_logo ? (
+                  <img
                     src={match.opponent_logo}
                     alt={match.opponent_name}
-                    fill
-                    style={{ objectFit: 'contain' }}
-                    unoptimized
+                    style={{ width: 32, height: 32, objectFit: 'contain' }}
+                    onError={e => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'block';
+                    }}
                   />
-                </div>
-              ) : (
-                <div style={{
-                  width: 40, height: 40, borderRadius: 8,
-                  background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'Bebas Neue', fontSize: 11, color: 'var(--text-muted)',
-                }}>
-                  {match.opponent_short || '?'}
-                </div>
-              )}
+                ) : null}
+                <span style={{ display: match.opponent_logo ? 'none' : 'block', fontFamily: 'Bebas Neue', fontSize: 11, color: 'var(--text-muted)' }}>
+                  {match.opponent_short || match.opponent_name?.slice(0,3).toUpperCase() || '?'}
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Footer */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              {format(matchDate, "dd 'de' MMM 'de' yyyy", { locale: ptBR })}
+              {formatMatchDate(match.match_date)}
             </span>
-
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               {match.team_avg > 0 && (
                 <span style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
