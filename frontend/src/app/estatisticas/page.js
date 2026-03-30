@@ -296,7 +296,7 @@ function BvsTab({ bvs }) {
         <div className="card" style={{ textAlign: 'center', borderColor: 'rgba(68,138,255,0.25)', background: 'rgba(68,138,255,0.04)' }}>
           {/* Photo */}
           <div style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', margin: '0 auto 12px', border: '2px solid rgba(68,138,255,0.4)', background: 'var(--bg-secondary)' }}>
-            <img src="/bruninho.jpg" alt="Bruninho" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            <img src="/bruninho.png" alt="Bruninho" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
             <span style={{ display: 'none', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: 28 }}>🎙️</span>
           </div>
@@ -313,7 +313,7 @@ function BvsTab({ bvs }) {
         {/* Simões */}
         <div className="card" style={{ textAlign: 'center', borderColor: 'rgba(232,0,28,0.25)', background: 'rgba(232,0,28,0.04)' }}>
           <div style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', margin: '0 auto 12px', border: '2px solid rgba(232,0,28,0.4)', background: 'var(--bg-secondary)' }}>
-            <img src="/simoes.jpg" alt="Simões" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            <img src="/simoes.png" alt="Simões" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
             <span style={{ display: 'none', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: 28 }}>🎤</span>
           </div>
