@@ -52,7 +52,7 @@ export default function HomePage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
           <Flame size={28} color="var(--red-primary)" />
           <h1 style={{ fontSize: 48, color: 'var(--text-primary)' }}>
-            Jogos do <span style={{ color: 'var(--red-primary)' }}>Mengão</span>
+            Jogos do <span style={{ color: 'var(--red-primary)' }}>Mengo Tengo</span>
           </h1>
         </div>
         <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>
