@@ -25,7 +25,7 @@ export default function Footer() {
               Bruninho <span style={{ color: 'var(--red-primary)' }}>&</span> Simões
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 2 }}>
-              Notas do Mengão
+              Notas do Tengo
             </div>
           </div>
         </div>
