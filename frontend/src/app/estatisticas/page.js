@@ -129,7 +129,6 @@ function RankingTable({ ranking, showMinNote = true }) {
   if (!ranking || ranking.length === 0) {
     return <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Nenhuma nota registrada.</div>;
   }
-
   const cols = [
     { key: '#',   label: '#',        align: 'center', w: 48  },
     { key: 'jog', label: 'Jogador',  align: 'left',   w: 220 },
@@ -142,35 +141,16 @@ function RankingTable({ ranking, showMinNote = true }) {
     { key: 'cra', label: 'Craques',  align: 'left',   w: 80  },
     { key: 'bag', label: 'Bagres',   align: 'left',   w: 70  },
   ];
-
-  const thS = c => ({
-    padding: '12px 16px',
-    textAlign: c.align,
-    width: c.w,
-    fontSize: 11,
-    fontFamily: 'Barlow Condensed',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: '0.06em',
-    color: 'var(--text-muted)',
-    borderBottom: '1px solid var(--border)',
-    whiteSpace: 'nowrap'
-  });
-
-  const tdS = (c, extra = {}) => ({
-    padding: '12px 16px',
-    textAlign: c.align,
-    ...extra
-  });
+  const thS = c => ({ padding: '12px 16px', textAlign: c.align, width: c.w, fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' });
+  const tdS = (c, extra = {}) => ({ padding: '12px 16px', textAlign: c.align, ...extra });
 
   return (
     <div>
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-        <StatHighlight icon="⭐" label="Melhor Jogador" value={ranking[0]?.name} sub={ranking[0]?.avg_overall ? `Média ${Number(ranking[0].avg_overall).toFixed(2)}` : ''} gold />
+        <StatHighlight icon="⭐" label="Melhor Jogador"    value={ranking[0]?.name} sub={ranking[0]?.avg_overall ? `Média ${Number(ranking[0].avg_overall).toFixed(2)}` : ''} gold />
         <StatHighlight icon="🐟" label="Bagre da Temporada" value={ranking[ranking.length - 1]?.name} sub={ranking[ranking.length - 1]?.avg_overall ? `Média ${Number(ranking[ranking.length - 1].avg_overall).toFixed(2)}` : ''} />
         <StatHighlight icon="⚽" label="Máx. Jogos" value={ranking.length ? `${Math.max(...ranking.map(r => parseInt(r.games) || 0))} jogos` : '—'} />
       </div>
-
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
           <thead>
@@ -178,48 +158,47 @@ function RankingTable({ ranking, showMinNote = true }) {
               {cols.map(c => <th key={c.key} style={thS(c)}>{c.label}</th>)}
             </tr>
           </thead>
-
           <tbody>
             {ranking.map((player, i) => (
-              <tr key={player.id}
-                style={{
-                  borderBottom: '1px solid var(--border)',
-                  background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)'
-                }}
+              <tr key={player.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.15s', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
+                onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)'}
               >
-                <td style={tdS(cols[0], { fontFamily: 'Bebas Neue', fontSize: 18 })}>{i + 1}</td>
-
+                <td style={tdS(cols[0], { fontFamily: 'Bebas Neue', fontSize: 18, color: i < 3 ? 'var(--gold)' : 'var(--text-muted)' })}>{i + 1}</td>
                 <td style={tdS(cols[1])}>
-                  <Link href={`/jogadores/${player.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-
+                  <Link href={`/jogadores/${player.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-primary)' }}>
                     {player.photo_url
-                      ? <img src={player.photo_url} style={{ width: 32, height: 32, borderRadius: 8 }} />
-                      : <div style={{ width: 32, height: 32 }}>{player.name?.slice(0, 2)}</div>
+                      ? <img src={player.photo_url} alt={player.name} style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--border)', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+                      : <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Bebas Neue', fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>{player.name?.slice(0, 2).toUpperCase()}</div>
                     }
-
-                    <span>{player.name}</span>
+                    <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{player.name}</span>
                   </Link>
                 </td>
-
-                <td style={tdS(cols[2])}>{player.position}</td>
-                <td style={tdS(cols[3])}>{player.games}</td>
-                <td style={tdS(cols[4])}>{player.avg_bruninho}</td>
-                <td style={tdS(cols[5])}>{player.avg_simoes}</td>
-                <td style={tdS(cols[6])}>{player.avg_overall}</td>
-                <td style={tdS(cols[7])}>{player.best_game}</td>
-                <td style={tdS(cols[8])}>{player.craque_count}</td>
-                <td style={tdS(cols[9])}>{player.bagre_count}</td>
+                <td style={tdS(cols[2])}><span style={{ fontSize: 11, fontFamily: 'Barlow Condensed', color: 'var(--text-muted)' }}>{player.position}</span></td>
+                <td style={tdS(cols[3], { fontFamily: 'Barlow Condensed', fontWeight: 600 })}>{player.games}</td>
+                <td style={tdS(cols[4])}><span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(player.avg_bruninho) }}>{player.avg_bruninho ? Number(player.avg_bruninho).toFixed(2) : '—'}</span></td>
+                <td style={tdS(cols[5])}><span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(player.avg_simoes) }}>{player.avg_simoes ? Number(player.avg_simoes).toFixed(2) : '—'}</span></td>
+                <td style={tdS(cols[6])}><span style={{ fontFamily: 'Bebas Neue', fontSize: 22, color: getRatingColor(player.avg_overall) }}>{player.avg_overall ? Number(player.avg_overall).toFixed(2) : '—'}</span></td>
+                <td style={tdS(cols[7])}><span style={{ color: 'var(--green)', fontFamily: 'Barlow Condensed', fontWeight: 600 }}>{player.best_game ? Number(player.best_game).toFixed(1) : '—'}</span></td>
+                <td style={tdS(cols[8])}><span style={{ color: 'var(--gold)', fontFamily: 'Barlow Condensed', fontWeight: 700 }}>{player.craque_count || 0}</span></td>
+                <td style={tdS(cols[9])}><span style={{ color: 'var(--red-primary)', fontFamily: 'Barlow Condensed', fontWeight: 700 }}>{player.bagre_count || 0}</span></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {showMinNote && (
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', marginTop: 10 }}>
+          * Apenas jogadores com 3 ou mais jogos como titular.
+        </p>
+      )}
     </div>
   );
 }
 
 // ─── Por campeonato ───────────────────────────────────────────────────────────
-function ChampionshipTab({ byChampionship, filterChamp }) {
+function ChampionshipTab({ byChampionship, filterChamp, championships }) {
+  // Group by championship
   const grouped = (byChampionship || []).reduce((acc, row) => {
     if (filterChamp && row.championship !== filterChamp) return acc;
     if (!acc[row.championship]) acc[row.championship] = [];
@@ -227,66 +206,60 @@ function ChampionshipTab({ byChampionship, filterChamp }) {
     return acc;
   }, {});
 
-  const entries = Object.entries(grouped);
+  const entries = Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b));
 
   if (entries.length === 0) {
-    return <div style={{ textAlign: 'center', padding: 60 }}>Nenhum dado.</div>;
+    return <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>Nenhum dado para este filtro.</div>;
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       {entries.map(([champ, players]) => {
-
         const sorted = [...players].sort((a, b) => parseFloat(b.avg_overall) - parseFloat(a.avg_overall));
-
+        const best = sorted[0];
+        const worst = sorted[sorted.length - 1];
         return (
           <div key={champ}>
-
-            <h3 style={{ fontSize: 28 }}>{champ}</h3>
-
-            <div className="card" style={{ padding: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <h3 style={{ fontFamily: 'Bebas Neue', fontSize: 28, color: 'var(--text-primary)' }}>{champ}</h3>
+              <span style={{ fontFamily: 'Barlow Condensed', fontSize: 13, color: 'var(--text-muted)' }}>
+                {players.length} jogadores avaliados
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+              <StatHighlight icon="⭐" label="Melhor"  value={best?.name}  sub={best?.avg_overall  ? `Média ${Number(best.avg_overall).toFixed(2)}`  : ''} gold />
+              <StatHighlight icon="🐟" label="Pior"    value={worst?.name} sub={worst?.avg_overall ? `Média ${Number(worst.avg_overall).toFixed(2)}` : ''} />
+            </div>
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                
                 <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Jogador</th>
-                    <th>Pos.</th>
-                    <th>Jogos</th>
-                    <th>Média</th>
+                  <tr style={{ background: 'var(--bg-secondary)' }}>
+                    {[['#','center',40],['Jogador','left',200],['Pos.','left',110],['Jogos','left',60],['Média','left',80]].map(([l,a,w]) => (
+                      <th key={l} style={{ padding: '10px 14px', textAlign: a, width: w, fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>{l}</th>
+                    ))}
                   </tr>
                 </thead>
-
                 <tbody>
                   {sorted.map((p, i) => (
-                    <tr key={p.id}>
-
-                      <td>{i + 1}</td>
-
-                      <td>
-                        <Link href={`/jogadores/${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-
-                          {/* 🔥 FOTO IGUAL RANKING */}
+                    <tr key={p.id || i} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
+                      <td style={{ padding: '10px 14px', textAlign: 'center', fontFamily: 'Bebas Neue', fontSize: 16, color: i < 3 ? 'var(--gold)' : 'var(--text-muted)' }}>{i + 1}</td>
+                      <td style={{ padding: '10px 14px' }}>
+                        <Link href={`/jogadores/${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)' }}>
                           {p.photo_url
-                            ? <img src={p.photo_url} style={{ width: 28, height: 28, borderRadius: 6 }} />
-                            : <div style={{ width: 28, height: 28 }}>{p.name?.slice(0,2)}</div>
+                            ? <img src={p.photo_url} alt={p.name} style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+                            : <div style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Bebas Neue', fontSize: 10, color: 'var(--text-muted)', flexShrink: 0 }}>{p.name?.slice(0,2).toUpperCase()}</div>
                           }
-
-                          {p.name}
+                          <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
                         </Link>
                       </td>
-
-                      <td>{p.position}</td>
-                      <td>{p.games}</td>
-                      <td>{p.avg_overall}</td>
-
+                      <td style={{ padding: '10px 14px' }}><span style={{ fontSize: 11, fontFamily: 'Barlow Condensed', color: 'var(--text-muted)' }}>{p.position}</span></td>
+                      <td style={{ padding: '10px 14px', fontFamily: 'Barlow Condensed', fontWeight: 600 }}>{p.games}</td>
+                      <td style={{ padding: '10px 14px' }}><span style={{ fontFamily: 'Bebas Neue', fontSize: 20, color: getRatingColor(p.avg_overall) }}>{p.avg_overall ? Number(p.avg_overall).toFixed(2) : '—'}</span></td>
                     </tr>
                   ))}
                 </tbody>
-
               </table>
             </div>
-
           </div>
         );
       })}
