@@ -246,8 +246,8 @@ function ChampionshipTab({ byChampionship, filterChamp, championships }) {
                       <td style={{ padding: '10px 14px' }}>
                         <Link href={`/jogadores/${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)' }}>
                           {p.photo_url
-                            ? <img src={p.photo_url} alt={p.name} style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
-                            : <div style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Bebas Neue', fontSize: 10, color: 'var(--text-muted)', flexShrink: 0 }}>{p.name?.slice(0,2).toUpperCase()}</div>
+                            ? <img src={p.photo_url} alt={p.name} style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--border)', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
+                            : <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Bebas Neue', fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>{player.name?.slice(0, 2).toUpperCase()}</div>
                           }
                           <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
                         </Link>
