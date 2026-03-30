@@ -38,19 +38,9 @@ export default function StatisticsPage() {
         <BarChart3 size={28} color="var(--red-primary)" />
         <h1 style={{ fontSize: 48 }}>Estatísticas</h1>
       </div>
-      <div style={{ marginBottom: 28 }}>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: 6 }}>
-        Análise completa das notas por temporada.
-      </p>
-      <p style={{
-        fontSize: 12,
-        color: 'var(--text-muted)',
-        fontFamily: 'Barlow Condensed',
-        letterSpacing: '0.04em'
-      }}>
-        * No ranking geral aparecem apenas jogadores com 3 ou mais jogos como titular.
-      </p>
-    </div>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: 28 }}>
+      Análise completa das notas por temporada.
+    </p>
 
       {/* Season selector */}
       <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 28, flexWrap: 'wrap' }}>
@@ -80,6 +70,17 @@ export default function StatisticsPage() {
         ))}
       </div>
 
+      {tab === 'ranking' && (
+      <p style={{
+        fontSize: 12,
+        color: 'var(--text-muted)',
+        fontFamily: 'Barlow Condensed',
+        letterSpacing: '0.04em',
+        marginBottom: 16
+      }}>
+        * No ranking geral aparecem apenas jogadores com 3 ou mais jogos como titular.
+      </p>
+    )}
       {loading ? <LoadingSpinner text="Calculando estatísticas..." /> : !stats ? (
         <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>Sem dados para esta temporada.</div>
       ) : (
