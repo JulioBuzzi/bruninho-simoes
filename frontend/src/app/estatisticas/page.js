@@ -307,7 +307,7 @@ function BvsTab({ bvs }) {
           <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8 }}>Média geral</div>
           <div style={{ marginTop: 16, padding: '12px', background: 'rgba(68,138,255,0.08)', borderRadius: 8 }}>
             <div style={{ fontFamily: 'Bebas Neue', fontSize: 28 }}>{bvs.bruninho_higher}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed' }}>vezes deu nota MAIOR</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed' }}>vezes deu nota maior</div>
           </div>
         </div>
         {/* Simões */}
@@ -324,7 +324,7 @@ function BvsTab({ bvs }) {
           <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8 }}>Média geral</div>
           <div style={{ marginTop: 16, padding: '12px', background: 'rgba(232,0,28,0.08)', borderRadius: 8 }}>
             <div style={{ fontFamily: 'Bebas Neue', fontSize: 28 }}>{bvs.simoes_higher}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed' }}>vezes deu nota MAIOR</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed' }}>vezes deu nota maior</div>
           </div>
         </div>
       </div>
