@@ -38,7 +38,19 @@ export default function StatisticsPage() {
         <BarChart3 size={28} color="var(--red-primary)" />
         <h1 style={{ fontSize: 48 }}>Estatísticas</h1>
       </div>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: 28 }}>Análise completa das notas por temporada.</p>
+      <div style={{ marginBottom: 28 }}>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: 6 }}>
+        Análise completa das notas por temporada.
+      </p>
+      <p style={{
+        fontSize: 12,
+        color: 'var(--text-muted)',
+        fontFamily: 'Barlow Condensed',
+        letterSpacing: '0.04em'
+      }}>
+        * No ranking geral aparecem apenas jogadores com 3 ou mais jogos como titular.
+      </p>
+    </div>
 
       {/* Season selector */}
       <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 28, flexWrap: 'wrap' }}>

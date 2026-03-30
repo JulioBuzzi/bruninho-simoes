@@ -52,7 +52,7 @@ export default function Navbar() {
               Bruninho <span style={{ color: 'var(--red-primary)' }}>&</span> Simões
             </div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-              Notas do Mengão
+              Notas do Tengo
             </div>
           </div>
         </Link>
