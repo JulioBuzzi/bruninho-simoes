@@ -30,7 +30,7 @@ export default function PlayersPage() {
   useEffect(() => {
     Promise.all([
       playersApi.getAll({ active: true }),
-      ratingsApi.getStats({ season: currentYear }),
+      ratingsApi.getStats({ season: currentYear, min_games: 1 }),
     ]).then(([p, s]) => {
       setPlayers(p);
       setStats(s.ranking || []);

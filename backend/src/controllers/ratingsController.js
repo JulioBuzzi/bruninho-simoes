@@ -82,8 +82,9 @@ const getPlayerRatings = async (req, res) => {
 // GET /ratings/stats - Estatísticas gerais
 const getStats = async (req, res) => {
   try {
-    const { season } = req.query;
+    const { season, min_games } = req.query;
     const currentSeason = season || new Date().getFullYear();
+    const minGames = parseInt(min_games) || 3;
 
     // Ranking de jogadores na temporada
     const rankingResult = await query(`
@@ -105,9 +106,9 @@ const getStats = async (req, res) => {
       JOIN matches m ON m.id = r.match_id
       WHERE m.season = $1
       GROUP BY p.id, p.name, p.position, p.photo_url
-      HAVING COUNT(r.id) >= 3
+      HAVING COUNT(r.id) >= $2
       ORDER BY avg_overall DESC NULLS LAST
-    `, [currentSeason]);
+    `, [currentSeason, minGames]);
 
     // Ranking por campeonato
     const byChampionshipResult = await query(`

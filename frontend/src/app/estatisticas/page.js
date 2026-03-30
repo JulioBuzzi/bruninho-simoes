@@ -82,73 +82,80 @@ export default function StatisticsPage() {
               </div>
 
               <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: 'var(--bg-secondary)' }}>
-                      {['#', 'Jogador', 'Pos.', 'Jogos', 'Bruninho', 'Simões', 'Média', 'Melhor', 'Craques', 'Bagres'].map(h => (
-                        <th key={h} style={{
-                          padding: '12px 16px', textAlign: h === '#' || h === 'Jogos' || h === 'Craques' || h === 'Bagres' ? 'center' : 'left',
-                          fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700,
-                          textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)',
-                          borderBottom: '1px solid var(--border)',
-                        }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats.ranking.map((player, i) => (
-                      <tr key={player.id} style={{
-                        borderBottom: '1px solid var(--border)',
-                        transition: 'background 0.15s',
-                        background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
-                      }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
-                        onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)'}
-                      >
-                        <td style={{ padding: '12px 16px', textAlign: 'center', fontFamily: 'Bebas Neue', fontSize: 18, color: i < 3 ? 'var(--gold)' : 'var(--text-muted)' }}>{i + 1}</td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <Link href={`/jogadores/${player.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-primary)' }}>
-                            {player.photo_url ? (
-                              <img src={player.photo_url} alt={player.name} style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--border)' }}
-                                onError={e => { e.target.style.display='none'; }} />
-                            ) : (
-                              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Bebas Neue', fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>
-                                {player.name?.slice(0,2).toUpperCase()}
-                              </div>
-                            )}
-                            <span style={{ fontWeight: 600 }}>{player.name}</span>
-                          </Link>
-                        </td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <span style={{ fontSize: 11, fontFamily: 'Barlow Condensed', color: 'var(--text-muted)' }}>{player.position}</span>
-                        </td>
-                        <td style={{ padding: '12px 16px', textAlign: 'center', fontFamily: 'Barlow Condensed', fontWeight: 600 }}>{player.games}</td>
-                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                          <span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(player.avg_bruninho) }}>{player.avg_bruninho ? Number(player.avg_bruninho).toFixed(2) : '—'}</span>
-                        </td>
-                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                          <span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(player.avg_simoes) }}>{player.avg_simoes ? Number(player.avg_simoes).toFixed(2) : '—'}</span>
-                        </td>
-                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                          <span style={{ fontFamily: 'Bebas Neue', fontSize: 22, color: getRatingColor(player.avg_overall) }}>
-                            {player.avg_overall ? Number(player.avg_overall).toFixed(2) : '—'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                          <span style={{ color: 'var(--green)', fontFamily: 'Barlow Condensed', fontWeight: 600 }}>
-                            {player.best_game ? Number(player.best_game).toFixed(1) : '—'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                          <span style={{ color: 'var(--gold)', fontFamily: 'Barlow Condensed', fontWeight: 700 }}>{player.craque_count || 0}</span>
-                        </td>
-                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                          <span style={{ color: 'var(--red-primary)', fontFamily: 'Barlow Condensed', fontWeight: 700 }}>{player.bagre_count || 0}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {/* Column config: key, label, align, width */}
+                {(() => {
+                  const cols = [
+                    { key: '#',       label: '#',        align: 'center', w: 48  },
+                    { key: 'jogador', label: 'Jogador',  align: 'left',   w: 220 },
+                    { key: 'pos',     label: 'Pos.',     align: 'left',   w: 110 },
+                    { key: 'jogos',   label: 'Jogos',    align: 'left',   w: 70  },
+                    { key: 'bru',     label: 'Bruninho', align: 'left',   w: 90  },
+                    { key: 'sim',     label: 'Simões',   align: 'left',   w: 90  },
+                    { key: 'med',     label: 'Média',    align: 'left',   w: 90  },
+                    { key: 'mel',     label: 'Melhor',   align: 'left',   w: 80  },
+                    { key: 'cra',     label: 'Craques',  align: 'left',   w: 80  },
+                    { key: 'bag',     label: 'Bagres',   align: 'left',   w: 70  },
+                  ];
+                  const thS = (col) => ({
+                    padding: '12px 16px', textAlign: col.align, width: col.w,
+                    fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700,
+                    textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)',
+                    borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap',
+                  });
+                  const tdS = (col, extra = {}) => ({
+                    padding: '12px 16px', textAlign: col.align, ...extra,
+                  });
+                  return (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                      <thead>
+                        <tr style={{ background: 'var(--bg-secondary)' }}>
+                          {cols.map(c => <th key={c.key} style={thS(c)}>{c.label}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stats.ranking.map((player, i) => (
+                          <tr key={player.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.15s', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
+                            onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)'}
+                          >
+                            {/* # */}
+                            <td style={tdS(cols[0], { fontFamily: 'Bebas Neue', fontSize: 18, color: i < 3 ? 'var(--gold)' : 'var(--text-muted)' })}>{i + 1}</td>
+                            {/* Jogador */}
+                            <td style={tdS(cols[1])}>
+                              <Link href={`/jogadores/${player.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-primary)' }}>
+                                {player.photo_url ? (
+                                  <img src={player.photo_url} alt={player.name} style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--border)', flexShrink: 0 }}
+                                    onError={e => { e.target.style.display = 'none'; }} />
+                                ) : (
+                                  <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Bebas Neue', fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>
+                                    {player.name?.slice(0, 2).toUpperCase()}
+                                  </div>
+                                )}
+                                <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{player.name}</span>
+                              </Link>
+                            </td>
+                            {/* Pos */}
+                            <td style={tdS(cols[2])}><span style={{ fontSize: 11, fontFamily: 'Barlow Condensed', color: 'var(--text-muted)' }}>{player.position}</span></td>
+                            {/* Jogos */}
+                            <td style={tdS(cols[3], { fontFamily: 'Barlow Condensed', fontWeight: 600 })}>{player.games}</td>
+                            {/* Bruninho */}
+                            <td style={tdS(cols[4])}><span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(player.avg_bruninho) }}>{player.avg_bruninho ? Number(player.avg_bruninho).toFixed(2) : '—'}</span></td>
+                            {/* Simões */}
+                            <td style={tdS(cols[5])}><span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(player.avg_simoes) }}>{player.avg_simoes ? Number(player.avg_simoes).toFixed(2) : '—'}</span></td>
+                            {/* Média */}
+                            <td style={tdS(cols[6])}><span style={{ fontFamily: 'Bebas Neue', fontSize: 22, color: getRatingColor(player.avg_overall) }}>{player.avg_overall ? Number(player.avg_overall).toFixed(2) : '—'}</span></td>
+                            {/* Melhor */}
+                            <td style={tdS(cols[7])}><span style={{ color: 'var(--green)', fontFamily: 'Barlow Condensed', fontWeight: 600 }}>{player.best_game ? Number(player.best_game).toFixed(1) : '—'}</span></td>
+                            {/* Craques */}
+                            <td style={tdS(cols[8])}><span style={{ color: 'var(--gold)', fontFamily: 'Barlow Condensed', fontWeight: 700 }}>{player.craque_count || 0}</span></td>
+                            {/* Bagres */}
+                            <td style={tdS(cols[9])}><span style={{ color: 'var(--red-primary)', fontFamily: 'Barlow Condensed', fontWeight: 700 }}>{player.bagre_count || 0}</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  );
+                })()}
                 {stats.ranking.length === 0 && (
                   <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
                     Nenhuma nota registrada nesta temporada.
