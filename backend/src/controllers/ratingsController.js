@@ -137,6 +137,23 @@ const getStats = async (req, res) => {
       WHERE m.season = $1 AND bruninho_rating IS NOT NULL AND simoes_rating IS NOT NULL
     `, [currentSeason]);
 
+    // ── Total de partidas avaliadas na temporada ──
+    const totalMatchesResult = await query(`
+      SELECT COUNT(DISTINCT match_id) AS total
+      FROM ratings r
+      JOIN matches m ON m.id = r.match_id
+      WHERE m.season = $1 AND r.average_rating IS NOT NULL
+    `, [currentSeason]);
+
+    // ── Total de partidas avaliadas por campeonato ──
+    const matchCountByChampResult = await query(`
+      SELECT m.championship, COUNT(DISTINCT m.id) AS match_count
+      FROM matches m
+      JOIN ratings r ON r.match_id = m.id
+      WHERE m.season = $1 AND r.average_rating IS NOT NULL
+      GROUP BY m.championship
+    `, [currentSeason]);
+
     // ── Evolução por jogo (cronológica, com média do time) ──
     const matchEvolutionResult = await query(`
       SELECT
@@ -171,10 +188,21 @@ const getStats = async (req, res) => {
       ORDER BY month
     `, [currentSeason]);
 
+    // Build match_count map for championships
+    const matchCountMap = {};
+    matchCountByChampResult.rows.forEach(r => { matchCountMap[r.championship] = parseInt(r.match_count); });
+
+    // Attach match_count to each by_championship row
+    const byChampWithCount = byChampionshipResult.rows.map(r => ({
+      ...r,
+      match_count: matchCountMap[r.championship] || 0,
+    }));
+
     res.json({
       season: currentSeason,
+      total_matches: parseInt(totalMatchesResult.rows[0]?.total || 0),
       ranking: rankingResult.rows,
-      by_championship: byChampionshipResult.rows,
+      by_championship: byChampWithCount,
       bruninho_vs_simoes: comparisonResult.rows[0],
       monthly_evolution: evolutionResult.rows,
       match_evolution: matchEvolutionResult.rows,

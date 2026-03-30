@@ -91,7 +91,7 @@ export default function StatisticsPage() {
         <>
           {/* ── RANKING GERAL ── */}
           {tab === 'ranking' && (
-            <RankingTable ranking={stats.ranking} showMinNote={true} />
+            <RankingTable ranking={stats.ranking} showMinNote={true} totalMatches={stats.total_matches} />
           )}
 
           {/* ── POR CAMPEONATO ── */}
@@ -115,7 +115,7 @@ export default function StatisticsPage() {
 }
 
 // ─── Ranking table ────────────────────────────────────────────────────────────
-function RankingTable({ ranking, showMinNote = true }) {
+function RankingTable({ ranking, showMinNote = true, totalMatches }) {
   if (!ranking || ranking.length === 0) {
     return <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Nenhuma nota registrada.</div>;
   }
@@ -139,7 +139,7 @@ function RankingTable({ ranking, showMinNote = true }) {
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <StatHighlight icon="⭐" label="Melhor Jogador"    value={ranking[0]?.name} sub={ranking[0]?.avg_overall ? `Média ${Number(ranking[0].avg_overall).toFixed(2)}` : ''} gold />
         <StatHighlight icon="🐟" label="Bagre da Temporada" value={ranking[ranking.length - 1]?.name} sub={ranking[ranking.length - 1]?.avg_overall ? `Média ${Number(ranking[ranking.length - 1].avg_overall).toFixed(2)}` : ''} />
-        <StatHighlight icon="⚽" label="Total de Jogos" value={ranking.length ? (() => { const total = ranking.reduce((sum, r) => sum + (parseInt(r.games) || 0), 0); return `${total} jogo${total !== 1 ? 's' : ''}`; })() : '—'} />
+        <StatHighlight icon="⚽" label="Jogos Avaliados" value={totalMatches != null ? `${totalMatches} jogo${totalMatches !== 1 ? 's' : ''}` : '—'} />
       </div>
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
@@ -207,7 +207,7 @@ function ChampionshipTab({ byChampionship, filterChamp }) {
         const sorted = [...players].sort((a, b) => parseFloat(b.avg_overall) - parseFloat(a.avg_overall));
         const best  = sorted[0];
         const worst = sorted[sorted.length - 1];
-        const totalJogos = sorted.reduce((sum, p) => sum + (parseInt(p.games) || 0), 0);
+        const totalJogos = sorted.length > 0 ? (parseInt(sorted[0]?.match_count) || Math.max(...sorted.map(p => parseInt(p.games) || 0))) : 0;
 
         return (
           <div key={champ}>
