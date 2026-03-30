@@ -176,171 +176,132 @@ export default function StatisticsPage() {
           {tab === 'evolution' && (
             <EvolutionTab matchEvolution={stats.match_evolution || []} season={season} />
           )}
+          
         </>
       )}
     </div>
   );
 }
 
-// ─── Line chart component ───────────────────────────────────────────────────
-function EvolutionTab({ matchEvolution, season }) {
-  const svgRef = useRef(null);
+// ─── Line chart component ────────────────────────────────────────────────────
+function MonthChart({ games, monthLabel }) {
+  if (!games || games.length === 0) return null;
 
-  if (matchEvolution.length === 0) {
-    return <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>Sem dados suficientes.</div>;
-  }
-
-  const W = 900, H = 320;
-  const PAD = { top: 40, right: 40, bottom: 72, left: 52 };
+  const W = 900, H = 300;
+  const PAD = { top: 44, right: 32, bottom: 80, left: 48 };
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
 
-  const ratings = matchEvolution.map(m => parseFloat(m.avg_rating));
-  const minR = Math.max(0, Math.min(...ratings) - 1);
-  const maxR = Math.min(10, Math.max(...ratings) + 1);
+  const ratings = games.map(m => parseFloat(m.avg_rating));
+  const minR = Math.max(0, Math.min(...ratings) - 1.5);
+  const maxR = Math.min(10, Math.max(...ratings) + 1.5);
 
-  const xStep = matchEvolution.length > 1 ? chartW / (matchEvolution.length - 1) : chartW;
-
-  const toX = i => PAD.left + (matchEvolution.length > 1 ? i * xStep : chartW / 2);
+  const toX = i => PAD.left + (games.length > 1 ? (i / (games.length - 1)) * chartW : chartW / 2);
   const toY = v => PAD.top + chartH - ((v - minR) / (maxR - minR)) * chartH;
 
-  // Build SVG path
-  const pts = matchEvolution.map((m, i) => `${toX(i).toFixed(1)},${toY(parseFloat(m.avg_rating)).toFixed(1)}`);
+  const pts = games.map((m, i) => `${toX(i).toFixed(1)},${toY(parseFloat(m.avg_rating)).toFixed(1)}`);
   const linePath = `M ${pts.join(' L ')}`;
+  const fillPath = `M ${toX(0).toFixed(1)},${(PAD.top + chartH)} L ${pts.join(' L ')} L ${toX(games.length - 1).toFixed(1)},${(PAD.top + chartH)} Z`;
 
-  // Gradient fill path
-  const fillPath = `M ${toX(0).toFixed(1)},${(PAD.top + chartH).toFixed(1)} L ${pts.join(' L ')} L ${toX(matchEvolution.length - 1).toFixed(1)},${(PAD.top + chartH).toFixed(1)} Z`;
-
-  // Y axis ticks
   const yTicks = [];
-  for (let v = Math.ceil(minR); v <= Math.floor(maxR); v++) {
-    yTicks.push(v);
-  }
+  for (let v = Math.ceil(minR); v <= Math.floor(maxR); v++) yTicks.push(v);
 
   return (
-    <div>
-      <h3 style={{ fontSize: 24, marginBottom: 20, color: 'var(--text-secondary)', fontFamily: 'Bebas Neue', letterSpacing: '0.04em' }}>
-        Média do Time por Jogo — {season}
-      </h3>
-
-      <div className="card" style={{ padding: '24px 16px', overflowX: 'auto' }}>
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${W} ${H}`}
-          style={{ width: '100%', minWidth: 480, height: 'auto', display: 'block' }}
-          xmlns="http://www.w3.org/2000/svg"
-        >
+    <div className="card" style={{ padding: '20px 12px 12px', marginBottom: 20 }}>
+      <div style={{ fontFamily: 'Bebas Neue', fontSize: 22, letterSpacing: '0.04em', color: 'var(--text-secondary)', marginBottom: 12, textTransform: 'capitalize', paddingLeft: 8 }}>
+        {monthLabel}
+        <span style={{ fontSize: 14, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', marginLeft: 10 }}>
+          {games.length} jogo{games.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', minWidth: Math.max(400, games.length * 80), height: 'auto', display: 'block' }}>
           <defs>
-            <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#e8001c" stopOpacity="0.25" />
+            <linearGradient id={`grad-${monthLabel}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#e8001c" stopOpacity="0.3" />
               <stop offset="100%" stopColor="#e8001c" stopOpacity="0.02" />
             </linearGradient>
           </defs>
 
-          {/* Grid lines */}
+          {/* Y grid + labels */}
           {yTicks.map(v => (
             <g key={v}>
-              <line
-                x1={PAD.left} y1={toY(v).toFixed(1)}
-                x2={PAD.left + chartW} y2={toY(v).toFixed(1)}
-                stroke="#2a2a3a" strokeWidth="1"
-              />
-              <text
-                x={PAD.left - 10} y={toY(v) + 4}
-                textAnchor="end" fill="#5a5a72"
-                fontFamily="Barlow Condensed" fontSize="12"
-              >{v}</text>
+              <line x1={PAD.left} y1={toY(v)} x2={PAD.left + chartW} y2={toY(v)} stroke="#2a2a3a" strokeWidth="1" />
+              <text x={PAD.left - 8} y={toY(v) + 4} textAnchor="end" fill="#5a5a72" fontFamily="Barlow Condensed" fontSize="12">{v}</text>
             </g>
           ))}
 
-          {/* Fill area */}
-          <path d={fillPath} fill="url(#lineGrad)" />
-
-          {/* Line */}
+          {/* Fill + line */}
+          <path d={fillPath} fill={`url(#grad-${monthLabel})`} />
           <path d={linePath} fill="none" stroke="#e8001c" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
 
-          {/* Points + labels */}
-          {matchEvolution.map((m, i) => {
+          {/* Points */}
+          {games.map((m, i) => {
             const x = toX(i);
             const y = toY(parseFloat(m.avg_rating));
             const rating = parseFloat(m.avg_rating);
             const color = rating >= 7 ? '#00c853' : rating >= 5 ? '#f5c842' : '#e8001c';
-            // Date label: short format
-            const dateStr = m.match_date ? String(m.match_date).slice(5, 10).replace('-', '/') : `J${i + 1}`;
-            const opponentShort = (m.opponent_name || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 3);
+            // DD/MM format
+            const dateStr = String(m.match_date).slice(0, 10).split('-').reverse().slice(0, 2).join('/');
+            const logoUrl = m.opponent_logo || null;
+            const logoSize = 28;
+            const logoY = PAD.top + chartH + 32;
 
             return (
-              <g key={m.match_id}>
+              <g key={m.match_id || i}>
                 {/* Dot */}
                 <circle cx={x} cy={y} r="6" fill={color} stroke="#0a0a0f" strokeWidth="2" />
-
-                {/* Rating above dot */}
-                <text
-                  x={x} y={y - 14}
-                  textAnchor="middle" fill={color}
-                  fontFamily="Bebas Neue" fontSize="14" letterSpacing="0.04em"
-                >{rating.toFixed(1)}</text>
-
-                {/* Date below x-axis */}
-                <text
-                  x={x} y={PAD.top + chartH + 20}
-                  textAnchor="middle" fill="#9090a8"
-                  fontFamily="Barlow Condensed" fontSize="11" fontWeight="600"
-                >{dateStr}</text>
-
-                {/* Opponent below date */}
-                <text
-                  x={x} y={PAD.top + chartH + 36}
-                  textAnchor="middle" fill="#5a5a72"
-                  fontFamily="Barlow Condensed" fontSize="11"
-                >{opponentShort}</text>
-
+                {/* Rating */}
+                <text x={x} y={y - 14} textAnchor="middle" fill={color} fontFamily="Bebas Neue" fontSize="15" letterSpacing="0.03em">{rating.toFixed(1)}</text>
+                {/* Date */}
+                <text x={x} y={PAD.top + chartH + 18} textAnchor="middle" fill="#9090a8" fontFamily="Barlow Condensed" fontSize="12" fontWeight="600">{dateStr}</text>
+                {/* Logo or abbrev */}
+                {logoUrl
+                  ? <image href={logoUrl} x={x - logoSize / 2} y={logoY} width={logoSize} height={logoSize} preserveAspectRatio="xMidYMid meet" />
+                  : <text x={x} y={logoY + 16} textAnchor="middle" fill="#5a5a72" fontFamily="Barlow Condensed" fontSize="12" fontWeight="600">
+                      {(m.opponent_name || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 3)}
+                    </text>
+                }
                 {/* Score */}
-                <text
-                  x={x} y={PAD.top + chartH + 52}
-                  textAnchor="middle" fill="#5a5a72"
-                  fontFamily="Bebas Neue" fontSize="11"
-                >{m.flamengo_goals}×{m.opponent_goals}</text>
+                <text x={x} y={PAD.top + chartH + 72} textAnchor="middle" fill="#5a5a72" fontFamily="Bebas Neue" fontSize="12">{m.flamengo_goals}×{m.opponent_goals}</text>
               </g>
             );
           })}
         </svg>
       </div>
-
-      {/* Monthly summary below */}
-      <h3 style={{ fontSize: 20, margin: '32px 0 16px', color: 'var(--text-secondary)', fontFamily: 'Bebas Neue', letterSpacing: '0.04em' }}>
-        Média por Mês
-      </h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {Object.entries(
-          matchEvolution.reduce((acc, m) => {
-            const month = String(m.match_date).slice(0, 7);
-            if (!acc[month]) acc[month] = [];
-            acc[month].push(parseFloat(m.avg_rating));
-            return acc;
-          }, {})
-        ).map(([month, vals]) => {
-          const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-          const [y, mo] = month.split('-');
-          const monthName = new Date(parseInt(y), parseInt(mo) - 1).toLocaleString('pt-BR', { month: 'long' });
-          const pct = (avg / 10) * 100;
-          return (
-            <div key={month} className="card" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ width: 100, fontFamily: 'Barlow Condensed', fontWeight: 600, textTransform: 'capitalize', fontSize: 15 }}>{monthName}</div>
-              <div style={{ flex: 1, height: 12, background: 'var(--bg-secondary)', borderRadius: 6, overflow: 'hidden' }}>
-                <div style={{ width: `${pct}%`, height: '100%', borderRadius: 6, background: `linear-gradient(90deg, ${getRatingColor(avg)}, ${getRatingColor(avg)}88)`, transition: 'width 0.6s ease' }} />
-              </div>
-              <span style={{ fontFamily: 'Bebas Neue', fontSize: 22, color: getRatingColor(avg), width: 60, textAlign: 'right' }}>{avg.toFixed(2)}</span>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', width: 60, textAlign: 'right', fontFamily: 'Barlow Condensed' }}>
-                {vals.length} jogo{vals.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
+
+function EvolutionTab({ matchEvolution, season }) {
+  if (!matchEvolution || matchEvolution.length === 0) {
+    return <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>Sem dados suficientes.</div>;
+  }
+
+  // Group games by month
+  const byMonth = matchEvolution.reduce((acc, m) => {
+    const key = String(m.match_date).slice(0, 7); // "YYYY-MM"
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(m);
+    return acc;
+  }, {});
+
+  const monthEntries = Object.entries(byMonth).sort(([a], [b]) => a.localeCompare(b));
+
+  return (
+    <div>
+      <h3 style={{ fontSize: 24, marginBottom: 20, color: 'var(--text-secondary)', fontFamily: 'Bebas Neue', letterSpacing: '0.04em' }}>
+        Evolução por Jogo — {season}
+      </h3>
+      {monthEntries.map(([key, games]) => {
+        const [y, mo] = key.split('-');
+        const monthLabel = new Date(parseInt(y), parseInt(mo) - 1).toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+        return <MonthChart key={key} games={games} monthLabel={monthLabel} />;
+      })}
+    </div>
+  );
+}
+
 
 function StatHighlight({ icon, label, value, sub, gold }) {
   return (

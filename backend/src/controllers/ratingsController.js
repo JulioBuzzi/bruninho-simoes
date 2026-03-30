@@ -138,13 +138,14 @@ const getStats = async (req, res) => {
         m.flamengo_goals,
         m.opponent_goals,
         t.name AS opponent_name,
+        t.logo_url AS opponent_logo,
         ROUND(AVG(r.average_rating), 2) AS avg_rating,
         COUNT(r.id) AS players_rated
       FROM matches m
       JOIN ratings r ON r.match_id = m.id
       JOIN teams t ON t.id = m.opponent_id
       WHERE m.season = $1 AND r.average_rating IS NOT NULL
-      GROUP BY m.id, m.match_date, m.championship, m.flamengo_goals, m.opponent_goals, t.name
+      GROUP BY m.id, m.match_date, m.championship, m.flamengo_goals, m.opponent_goals, t.name, t.logo_url
       HAVING COUNT(r.id) >= 1
       ORDER BY m.match_date ASC
     `, [currentSeason]);
