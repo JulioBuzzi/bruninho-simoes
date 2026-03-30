@@ -33,7 +33,9 @@ export default function MatchDetailPage() {
 
   const rated = players.filter(p => p.average_rating !== null);
   const worstRating = rated.length ? Math.min(...rated.map(p => parseFloat(p.average_rating))) : null;
-  const bagrePlayers = worstRating !== null ? rated.filter(p => parseFloat(p.average_rating) === worstRating) : [];
+  const bestRating  = rated.length ? Math.max(...rated.map(p => parseFloat(p.average_rating))) : null;
+  const bagrePlayers  = worstRating !== null ? rated.filter(p => parseFloat(p.average_rating) === worstRating) : [];
+  const craquePlayers = bestRating  !== null ? rated.filter(p => parseFloat(p.average_rating) === bestRating)  : [];
 
   return (
     <div className="page-container fade-in" style={{ paddingTop: 32, paddingBottom: 80 }}>
@@ -84,12 +86,14 @@ export default function MatchDetailPage() {
         {/* 4 highlight cards below score */}
         {highlights && (
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-            {/* MVP */}
-            <div style={{ background: 'rgba(245,200,66,0.06)', border: '1px solid rgba(245,200,66,0.2)', borderRadius: 10, padding: '16px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, textAlign: 'center', minHeight: 110 }}>
+            {/* Craque(s) do jogo */}
+            <div style={{ background: 'rgba(245,200,66,0.06)', border: '1px solid rgba(245,200,66,0.2)', borderRadius: 10, padding: '16px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, textAlign: 'center', minHeight: 110 }}>
               <Star size={18} color="var(--gold)" fill="var(--gold)" />
-              <div style={{ fontSize: 10, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--gold)' }}>MVP do Jogo</div>
-              <div style={{ fontFamily: 'Bebas Neue', fontSize: 18, lineHeight: 1.1 }}>{highlights.mvp?.player_name || '—'}</div>
-              {highlights.mvp && <div style={{ fontFamily: 'Bebas Neue', fontSize: 22, color: 'var(--gold)' }}>{Number(highlights.mvp.average_rating).toFixed(1)}</div>}
+              <div style={{ fontSize: 10, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--gold)' }}>Craque{craquePlayers.length > 1 ? 's' : ''} do Jogo</div>
+              {craquePlayers.length > 0 ? craquePlayers.map(c => (
+                <div key={c.player_id} style={{ fontFamily: 'Bebas Neue', fontSize: craquePlayers.length > 1 ? 15 : 18, lineHeight: 1.15 }}>{c.player_name}</div>
+              )) : <div style={{ fontFamily: 'Bebas Neue', fontSize: 18 }}>—</div>}
+              {craquePlayers.length > 0 && <div style={{ fontFamily: 'Bebas Neue', fontSize: 22, color: 'var(--gold)' }}>{Number(bestRating).toFixed(1)}</div>}
             </div>
 
             {/* Team avg */}
@@ -181,8 +185,8 @@ export default function MatchDetailPage() {
                         <div style={{ fontWeight: 600, fontSize: 15 }}>{player.player_name}</div>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', letterSpacing: '0.04em' }}>{player.position_in_match || player.position}</div>
                       </div>
-                      {isMvp && <span className="badge badge-gold" style={{ marginLeft: 4 }}>⭐ Craque</span>}
-                      {isBagre && !isMvp && <span className="badge badge-red" style={{ marginLeft: 4 }}>🐟 Bagre</span>}
+                      {isCraque && <span className="badge badge-gold" style={{ marginLeft: 4 }}>⭐ Craque</span>}
+                      {isBagre && !isCraque && <span className="badge badge-red" style={{ marginLeft: 4 }}>🐟 Bagre</span>}
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'center' }}><RatingBadge value={player.simoes_rating} size="sm" /></div>
                     <div style={{ display: 'flex', justifyContent: 'center' }}><RatingBadge value={player.bruninho_rating} size="sm" /></div>
