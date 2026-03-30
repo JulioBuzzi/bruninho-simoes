@@ -106,13 +106,21 @@ const getStats = async (req, res) => {
 
     // ── Ranking por campeonato ──
     const byChampionshipResult = await query(`
-      SELECT p.id, p.name, m.championship, COUNT(r.id) AS games,
-             ROUND(AVG(r.average_rating), 2) AS avg_overall
+      SELECT
+        p.id,
+        p.name,
+        p.position,
+        p.photo_url,
+        m.championship,
+        COUNT(r.id) AS games,
+        ROUND(AVG(r.average_rating), 2) AS avg_overall,
+        ROUND(AVG(r.bruninho_rating), 2) AS avg_bruninho,
+        ROUND(AVG(r.simoes_rating), 2) AS avg_simoes
       FROM players p
       JOIN ratings r ON r.player_id = p.id
       JOIN matches m ON m.id = r.match_id
       WHERE m.season = $1
-      GROUP BY p.id, p.name, m.championship
+      GROUP BY p.id, p.name, p.position, p.photo_url, m.championship
       ORDER BY m.championship, avg_overall DESC NULLS LAST
     `, [currentSeason]);
 

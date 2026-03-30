@@ -51,7 +51,7 @@ export default function StatisticsPage() {
             {seasons.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
-        {(tab === 'ranking' || tab === 'porcamp' || tab === 'evolution') && (
+        {(tab === 'porcamp' || tab === 'evolution') && (
           <div style={{ minWidth: 200 }}>
             <label>Campeonato</label>
             <select className="input" value={filterChamp} onChange={e => setFilterChamp(e.target.value)}>
@@ -91,22 +91,12 @@ export default function StatisticsPage() {
         <>
           {/* ── RANKING GERAL ── */}
           {tab === 'ranking' && (
-            <RankingTable
-              ranking={filterChamp
-                ? stats.by_championship.filter(r => r.championship === filterChamp).reduce((acc, r) => {
-                    const ex = acc.find(a => a.id === r.id);
-                    if (!ex) acc.push({ ...r, games: r.games, avg_overall: r.avg_overall });
-                    return acc;
-                  }, [])
-                : stats.ranking
-              }
-              showMinNote={!filterChamp}
-            />
+            <RankingTable ranking={stats.ranking} showMinNote={true} />
           )}
 
           {/* ── POR CAMPEONATO ── */}
           {tab === 'porcamp' && (
-            <ChampionshipTab byChampionship={stats.by_championship} filterChamp={filterChamp} championships={championships} />
+            <ChampionshipTab byChampionship={stats.by_championship} filterChamp={filterChamp} />
           )}
 
           {/* ── BRUNINHO VS SIMÕES ── */}
@@ -149,7 +139,7 @@ function RankingTable({ ranking, showMinNote = true }) {
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <StatHighlight icon="⭐" label="Melhor Jogador"    value={ranking[0]?.name} sub={ranking[0]?.avg_overall ? `Média ${Number(ranking[0].avg_overall).toFixed(2)}` : ''} gold />
         <StatHighlight icon="🐟" label="Bagre da Temporada" value={ranking[ranking.length - 1]?.name} sub={ranking[ranking.length - 1]?.avg_overall ? `Média ${Number(ranking[ranking.length - 1].avg_overall).toFixed(2)}` : ''} />
-        <StatHighlight icon="⚽" label="Máx. Jogos" value={ranking.length ? `${Math.max(...ranking.map(r => parseInt(r.games) || 0))} jogos` : '—'} />
+        <StatHighlight icon="⚽" label="Total de Jogos" value={ranking.length ? (() => { const total = ranking.reduce((sum, r) => sum + (parseInt(r.games) || 0), 0); return `${total} jogo${total !== 1 ? 's' : ''}`; })() : '—'} />
       </div>
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
@@ -197,8 +187,7 @@ function RankingTable({ ranking, showMinNote = true }) {
 }
 
 // ─── Por campeonato ───────────────────────────────────────────────────────────
-function ChampionshipTab({ byChampionship, filterChamp, championships }) {
-  // Group by championship
+function ChampionshipTab({ byChampionship, filterChamp }) {
   const grouped = (byChampionship || []).reduce((acc, row) => {
     if (filterChamp && row.championship !== filterChamp) return acc;
     if (!acc[row.championship]) acc[row.championship] = [];
@@ -213,47 +202,78 @@ function ChampionshipTab({ byChampionship, filterChamp, championships }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
       {entries.map(([champ, players]) => {
         const sorted = [...players].sort((a, b) => parseFloat(b.avg_overall) - parseFloat(a.avg_overall));
-        const best = sorted[0];
+        const best  = sorted[0];
         const worst = sorted[sorted.length - 1];
+        const totalJogos = sorted.reduce((sum, p) => sum + (parseInt(p.games) || 0), 0);
+
         return (
           <div key={champ}>
+            {/* Championship header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
               <h3 style={{ fontFamily: 'Bebas Neue', fontSize: 28, color: 'var(--text-primary)' }}>{champ}</h3>
               <span style={{ fontFamily: 'Barlow Condensed', fontSize: 13, color: 'var(--text-muted)' }}>
                 {players.length} jogadores avaliados
               </span>
             </div>
+
+            {/* Highlights row */}
             <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-              <StatHighlight icon="⭐" label="Melhor"  value={best?.name}  sub={best?.avg_overall  ? `Média ${Number(best.avg_overall).toFixed(2)}`  : ''} gold />
-              <StatHighlight icon="🐟" label="Pior"    value={worst?.name} sub={worst?.avg_overall ? `Média ${Number(worst.avg_overall).toFixed(2)}` : ''} />
+              <StatHighlight icon="⭐" label="Melhor" value={best?.name}  sub={best?.avg_overall  ? `Média ${Number(best.avg_overall).toFixed(2)}`  : ''} gold />
+              <StatHighlight icon="🐟" label="Pior"   value={worst?.name} sub={worst?.avg_overall ? `Média ${Number(worst.avg_overall).toFixed(2)}` : ''} />
+              <StatHighlight icon="⚽" label="Total de Jogos" value={`${totalJogos} jogo${totalJogos !== 1 ? 's' : ''}`} />
             </div>
+
+            {/* Table */}
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                 <thead>
                   <tr style={{ background: 'var(--bg-secondary)' }}>
-                    {[['#','center',40],['Jogador','left',200],['Pos.','left',110],['Jogos','left',60],['Média','left',80]].map(([l,a,w]) => (
-                      <th key={l} style={{ padding: '10px 14px', textAlign: a, width: w, fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>{l}</th>
+                    {[
+                      ['#',       'center', 48 ],
+                      ['Jogador', 'left',   220],
+                      ['Pos.',    'left',   110],
+                      ['Jogos',   'left',   70 ],
+                      ['Bruninho','left',   90 ],
+                      ['Simões',  'left',   90 ],
+                      ['Média',   'left',   90 ],
+                    ].map(([l, a, w]) => (
+                      <th key={l} style={{ padding: '10px 14px', textAlign: a, width: w, fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>{l}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {sorted.map((p, i) => (
-                    <tr key={p.id || i} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
+                    <tr key={`${p.id}-${i}`} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.15s', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
+                      onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)'}
+                    >
+                      {/* # */}
                       <td style={{ padding: '10px 14px', textAlign: 'center', fontFamily: 'Bebas Neue', fontSize: 16, color: i < 3 ? 'var(--gold)' : 'var(--text-muted)' }}>{i + 1}</td>
+                      {/* Jogador com foto */}
                       <td style={{ padding: '10px 14px' }}>
-                        <Link href={`/jogadores/${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)' }}>
+                        <Link href={`/jogadores/${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-primary)' }}>
                           {p.photo_url
-                            ? <img src={p.photo_url} alt={p.name} style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} onError={e => { e.target.style.display = 'none'; }} />
-                            : <div style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Bebas Neue', fontSize: 10, color: 'var(--text-muted)', flexShrink: 0 }}>{p.name?.slice(0,2).toUpperCase()}</div>
-                          }
+                            ? <img src={p.photo_url} alt={p.name} style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--border)', flexShrink: 0 }}
+                                onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+                            : null}
+                          <div style={{ display: p.photo_url ? 'none' : 'flex', width: 32, height: 32, borderRadius: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border)', alignItems: 'center', justifyContent: 'center', fontFamily: 'Bebas Neue', fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>
+                            {p.name?.slice(0, 2).toUpperCase()}
+                          </div>
                           <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
                         </Link>
                       </td>
+                      {/* Pos */}
                       <td style={{ padding: '10px 14px' }}><span style={{ fontSize: 11, fontFamily: 'Barlow Condensed', color: 'var(--text-muted)' }}>{p.position}</span></td>
+                      {/* Jogos */}
                       <td style={{ padding: '10px 14px', fontFamily: 'Barlow Condensed', fontWeight: 600 }}>{p.games}</td>
+                      {/* Bruninho */}
+                      <td style={{ padding: '10px 14px' }}><span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(p.avg_bruninho) }}>{p.avg_bruninho ? Number(p.avg_bruninho).toFixed(2) : '—'}</span></td>
+                      {/* Simões */}
+                      <td style={{ padding: '10px 14px' }}><span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(p.avg_simoes) }}>{p.avg_simoes ? Number(p.avg_simoes).toFixed(2) : '—'}</span></td>
+                      {/* Média */}
                       <td style={{ padding: '10px 14px' }}><span style={{ fontFamily: 'Bebas Neue', fontSize: 20, color: getRatingColor(p.avg_overall) }}>{p.avg_overall ? Number(p.avg_overall).toFixed(2) : '—'}</span></td>
                     </tr>
                   ))}
@@ -276,7 +296,7 @@ function BvsTab({ bvs }) {
         <div className="card" style={{ textAlign: 'center', borderColor: 'rgba(68,138,255,0.25)', background: 'rgba(68,138,255,0.04)' }}>
           {/* Photo */}
           <div style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', margin: '0 auto 12px', border: '2px solid rgba(68,138,255,0.4)', background: 'var(--bg-secondary)' }}>
-            <img src="/bruninho.png" alt="Bruninho" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            <img src="/bruninho.jpg" alt="Bruninho" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
             <span style={{ display: 'none', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: 28 }}>🎙️</span>
           </div>
@@ -287,13 +307,13 @@ function BvsTab({ bvs }) {
           <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8 }}>Média geral</div>
           <div style={{ marginTop: 16, padding: '12px', background: 'rgba(68,138,255,0.08)', borderRadius: 8 }}>
             <div style={{ fontFamily: 'Bebas Neue', fontSize: 28 }}>{bvs.bruninho_higher}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed' }}>vezes deu nota maior</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed' }}>vezes deu nota MAIOR</div>
           </div>
         </div>
         {/* Simões */}
         <div className="card" style={{ textAlign: 'center', borderColor: 'rgba(232,0,28,0.25)', background: 'rgba(232,0,28,0.04)' }}>
           <div style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', margin: '0 auto 12px', border: '2px solid rgba(232,0,28,0.4)', background: 'var(--bg-secondary)' }}>
-            <img src="/simoes.png" alt="Simões" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            <img src="/simoes.jpg" alt="Simões" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
             <span style={{ display: 'none', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: 28 }}>🎤</span>
           </div>
@@ -304,7 +324,7 @@ function BvsTab({ bvs }) {
           <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8 }}>Média geral</div>
           <div style={{ marginTop: 16, padding: '12px', background: 'rgba(232,0,28,0.08)', borderRadius: 8 }}>
             <div style={{ fontFamily: 'Bebas Neue', fontSize: 28 }}>{bvs.simoes_higher}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed' }}>vezes deu nota maior</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed' }}>vezes deu nota MAIOR</div>
           </div>
         </div>
       </div>
