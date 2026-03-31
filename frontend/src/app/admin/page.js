@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { matchesApi, playersApi, teamsApi, ratingsApi } from '../../lib/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import { FootballFieldEditor, FORMATION_KEYS } from '../../components/FootballField';
 import toast from 'react-hot-toast';
 import { Plus, LogOut, Save, Trash2, Pencil, X, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -146,23 +145,9 @@ function MatchesTab({ matches, teams, players, onRefresh }) {
 
 /* ─── CREATE MATCH FORM ───────────────────────────────────────────────────── */
 function CreateMatchForm({ teams, players, onDone, onCancel }) {
-  const empty = { match_date:'', championship:'Brasileirão', season:new Date().getFullYear(), opponent_id:'', flamengo_goals:0, opponent_goals:0, is_home:true, stadium:'', round:'', formation:'4-3-3', starters:Array(11).fill(null), goals:[], assists:[] };
+  const empty = { match_date:'', championship:'Brasileirão', season:new Date().getFullYear(), opponent_id:'', flamengo_goals:0, opponent_goals:0, is_home:true, stadium:'', round:'', starters:[], goals:[], assists:[] };
   const [form, setForm]     = useState(empty);
   const [loading, setLoading] = useState(false);
-  const [selectorOpen, setSelectorOpen] = useState(null); // { slotIndex, available, current }
-
-  const handleFieldChange = (action, slotIndex, available, current) => {
-    if (action === 'openSelector') setSelectorOpen({ slotIndex, available, current });
-  };
-  const assignPlayer = (slotIndex, player) => {
-    const newStarters = [...form.starters];
-    // Remove this player from any other slot
-    for (let i = 0; i < newStarters.length; i++) if (newStarters[i]?.player_id === player?.id) newStarters[i] = null;
-    newStarters[slotIndex] = player ? { player_id: player.id, name: player.name, number: player.number, position: player.position } : null;
-    setForm(p => ({ ...p, starters: newStarters }));
-    setSelectorOpen(null);
-  };
-
   const addGoal    = () => setForm(p => ({ ...p, goals:   [...p.goals,   { player_id:'', minute:'', is_own_goal:false, is_penalty:false }] }));
   const removeGoal = i  => setForm(p => ({ ...p, goals:   p.goals.filter((_,idx) => idx!==i) }));
   const upGoal     = (i,f,v) => setForm(p => ({ ...p, goals:   p.goals.map((g,idx)   => idx===i ? {...g,[f]:v} : g) }));
@@ -174,15 +159,13 @@ function CreateMatchForm({ teams, players, onDone, onCancel }) {
     if (!form.match_date || !form.opponent_id) { toast.error('Preencha data e adversário'); return; }
     setLoading(true);
     try {
-      const starters = form.starters.filter(Boolean).map(s => ({ player_id: s.player_id, position: s.position }));
-      await matchesApi.create({ ...form, starters, goals: form.goals.filter(g => g.player_id||g.is_own_goal), assists: form.assists.filter(a => a.player_id) });
+      await matchesApi.create({ ...form, goals: form.goals.filter(g => g.player_id||g.is_own_goal), assists: form.assists.filter(a => a.player_id) });
       toast.success('Jogo criado!');
       onDone();
     } catch (err) { toast.error(err.response?.data?.error||'Erro ao criar jogo'); }
     finally { setLoading(false); }
   };
 
-  const filledCount = form.starters.filter(Boolean).length;
 
   return (
     <div className="card" style={{ marginBottom:24 }}>
@@ -214,68 +197,27 @@ function CreateMatchForm({ teams, players, onDone, onCancel }) {
         <div><label>Rodada/Fase</label><input className="input" value={form.round} onChange={e => setForm(p=>({...p,round:e.target.value}))} placeholder="Rodada 1" /></div>
       </div>
 
-      {/* Formation + Field */}
+
+
+      {/* Titulares */}
       <div style={{ paddingTop:20, borderTop:'1px solid var(--border)', marginBottom:24 }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16, flexWrap:'wrap', gap:12 }}>
-          <div>
-            <label>Formação</label>
-            <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginTop:6 }}>
-              {FORMATION_KEYS.map(f => (
-                <button key={f} type="button" onClick={() => setForm(p => ({ ...p, formation:f, starters:Array(11).fill(null) }))} style={{
-                  padding:'6px 14px', borderRadius:8, cursor:'pointer', border:'none',
-                  background: form.formation===f ? 'var(--red-primary)' : 'var(--bg-secondary)',
-                  color: form.formation===f ? 'white' : 'var(--text-secondary)',
-                  fontFamily:'Barlow Condensed', fontWeight:700, fontSize:13,
-                  borderColor: form.formation===f ? 'var(--red-primary)' : 'var(--border)',
-                  border: `1px solid ${form.formation===f ? 'var(--red-primary)' : 'var(--border)'}`,
-                }}>{f}</button>
-              ))}
-            </div>
-          </div>
-          <span style={{ fontSize:13, color: filledCount===11 ? 'var(--green)' : 'var(--text-muted)' }}>
-            {filledCount}/11 jogadores
-          </span>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+          <label style={{ margin:0 }}>Titulares</label>
+          <span style={{ fontSize:12, color: form.starters.length===11 ? 'var(--green)' : 'var(--text-muted)' }}>{form.starters.length}/11</span>
         </div>
-
-        <p style={{ fontSize:12, color:'var(--text-muted)', marginBottom:12, fontFamily:'Barlow Condensed' }}>
-          Clique em um círculo no campo para atribuir um jogador à posição.
-        </p>
-
-        <FootballFieldEditor
-          formation={form.formation}
-          starters={form.starters}
-          players={players}
-          onChange={handleFieldChange}
-        />
-
-        {/* Player selector modal */}
-        {selectorOpen && (
-          <div style={{ marginTop:16, background:'var(--bg-secondary)', border:'1px solid var(--border-bright)', borderRadius:12, padding:16 }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-              <span style={{ fontFamily:'Barlow Condensed', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.05em', fontSize:13 }}>
-                Escolha o jogador para a posição #{selectorOpen.slotIndex + 1}
-              </span>
-              <button onClick={() => setSelectorOpen(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)' }}><X size={16} /></button>
-            </div>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-              {selectorOpen.current?.player_id && (
-                <button onClick={() => assignPlayer(selectorOpen.slotIndex, null)}
-                  style={{ padding:'6px 12px', borderRadius:8, cursor:'pointer', background:'rgba(232,0,28,0.1)', color:'var(--red-primary)', border:'1px solid rgba(232,0,28,0.3)', fontFamily:'Barlow', fontSize:12 }}>
-                  ✕ Remover jogador
-                </button>
-              )}
-              {selectorOpen.available.map(p => (
-                <button key={p.id} onClick={() => assignPlayer(selectorOpen.slotIndex, p)} style={{
-                  padding:'6px 12px', borderRadius:8, cursor:'pointer',
-                  background:'var(--bg-card)', color:'var(--text-primary)',
-                  border:'1px solid var(--border)', fontFamily:'Barlow', fontSize:13,
-                }}>
-                  {p.number ? `#${p.number} ` : ''}{p.name} <span style={{color:'var(--text-muted)',fontSize:11}}>({p.position})</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+          {players.map(player => {
+            const sel = form.starters.find(s => s.player_id === player.id);
+            return (
+              <button key={player.id} type="button" onClick={() => setForm(prev => {
+                const exists = prev.starters.find(s => s.player_id === player.id);
+                return { ...prev, starters: exists ? prev.starters.filter(s => s.player_id !== player.id) : [...prev.starters, { player_id: player.id, position: player.position }] };
+              })} style={{ padding:'6px 14px', borderRadius:8, cursor:'pointer', background: sel ? 'var(--red-primary)' : 'var(--bg-secondary)', color: sel ? 'white' : 'var(--text-secondary)', fontFamily:'Barlow', fontSize:13, border: `1px solid ${sel ? 'var(--red-primary)' : 'var(--border)'}`, transition:'all 0.15s' }}>
+                {player.number ? `#${player.number} ` : ''}{player.name}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <GoalsAssistsForm
@@ -298,38 +240,16 @@ function EditMatchPanel({ matchId, players, onDone }) {
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
   const [score,   setScore]   = useState({ flamengo_goals:0, opponent_goals:0 });
-  const [formation, setFormation] = useState('4-3-3');
-  const [starters, setStarters]   = useState(Array(11).fill(null));
   const [goals,    setGoals]    = useState([]);
   const [assists,  setAssists]  = useState([]);
-  const [selectorOpen, setSelectorOpen] = useState(null);
-
   useEffect(() => {
     matchesApi.getById(matchId).then(d => {
       setData(d);
       setScore({ flamengo_goals: d.match.flamengo_goals, opponent_goals: d.match.opponent_goals });
-      setFormation(d.match.formation || '4-3-3');
-      // Map existing starters to slots
-      const fmt = d.match.formation || '4-3-3';
-      const existingStarters = d.players.map(p => ({ player_id: p.player_id, name: p.player_name, number: p.number, position: p.position }));
-      const slots = Array(11).fill(null);
-      existingStarters.forEach((p, i) => { if (i < 11) slots[i] = p; });
-      setStarters(slots);
       setGoals(d.goals.map(g => ({ player_id: g.player_id||'', minute: g.minute||'', is_own_goal: g.is_own_goal||false, is_penalty: g.is_penalty||false })));
       setAssists(d.assists.map(a => ({ player_id: a.player_id||'', minute: a.minute||'' })));
     }).finally(() => setLoading(false));
   }, [matchId]);
-
-  const handleFieldChange = (action, slotIndex, available, current) => {
-    if (action === 'openSelector') setSelectorOpen({ slotIndex, available, current });
-  };
-  const assignPlayer = (slotIndex, player) => {
-    const n = [...starters];
-    for (let i = 0; i < n.length; i++) if (n[i]?.player_id === player?.id) n[i] = null;
-    n[slotIndex] = player ? { player_id: player.id, name: player.name, number: player.number, position: player.position } : null;
-    setStarters(n);
-    setSelectorOpen(null);
-  };
 
   const addGoal    = () => setGoals(p  => [...p,  { player_id:'', minute:'', is_own_goal:false, is_penalty:false }]);
   const removeGoal = i  => setGoals(p  => p.filter((_,idx) => idx!==i));
@@ -341,12 +261,9 @@ function EditMatchPanel({ matchId, players, onDone }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const startersList = starters.filter(Boolean).map(s => ({ player_id: s.player_id, position: s.position }));
       await matchesApi.updateGoalsAssists(matchId, {
         flamengo_goals: parseInt(score.flamengo_goals)||0,
         opponent_goals: parseInt(score.opponent_goals)||0,
-        formation,
-        starters: startersList,
         goals:   goals.filter(g => g.player_id||g.is_own_goal),
         assists: assists.filter(a => a.player_id),
       });

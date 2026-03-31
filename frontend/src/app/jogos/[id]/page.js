@@ -7,7 +7,6 @@ import { matchesApi } from '../../../lib/api';
 import RatingBadge from '../../../components/RatingBadge';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import { ArrowLeft, Star, Target, Zap, Home, Plane } from 'lucide-react';
-import { FootballFieldDisplay } from '../../../components/FootballField';
 
 // ── Football pitch inline ─────────────────────────────────────────────────
 const FORMATIONS_MAP = {
@@ -279,24 +278,6 @@ export default function MatchDetailPage() {
 
       {/* Football pitch */}
       {players.length > 0 && <PitchView players={players} />}
-
-      {/* Football field */}
-      {players.length > 0 && match.formation && (
-        <div style={{ marginBottom: 28 }}>
-          <h2 style={{ fontSize: 32, marginBottom: 16 }}>
-            Escalação <span style={{ color: 'var(--red-primary)' }}>{match.formation}</span>
-          </h2>
-          <FootballFieldDisplay
-            formation={match.formation}
-            starters={players.map(p => ({
-              player_id: p.player_id,
-              name: p.player_name,
-              number: p.number,
-              position: p.position_in_match || p.position,
-            }))}
-          />
-        </div>
-      )}
 
       {/* Players table */}
       <h2 style={{ fontSize: 32, marginBottom: 20 }}>Notas dos <span style={{ color: 'var(--red-primary)' }}>Titulares</span></h2>
