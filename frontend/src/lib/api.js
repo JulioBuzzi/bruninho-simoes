@@ -36,6 +36,7 @@ export const matchesApi = {
   create: (data) => api.post('/matches', data).then(r => r.data),
   update: (id, data) => api.put(`/matches/${id}`, data).then(r => r.data),
   delete: (id) => api.delete(`/matches/${id}`).then(r => r.data),
+  updateGoalsAssists: (id, data) => api.put(`/matches/${id}/goals-assists`, data).then(r => r.data),
   getSeasons: () => api.get('/matches/seasons').then(r => r.data),
   getChampionships: () => api.get('/matches/championships').then(r => r.data),
 };

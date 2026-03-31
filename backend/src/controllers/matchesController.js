@@ -303,4 +303,46 @@ const getChampionships = async (req, res) => {
   }
 };
 
-module.exports = { getMatches, getMatchById, createMatch, updateMatch, deleteMatch, getSeasons, getChampionships };
+
+// PUT /matches/:id/goals-assists - Atualizar gols e assistências de um jogo
+const updateMatchGoalsAssists = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { goals, assists } = req.body;
+
+    // Verificar se o jogo existe
+    const matchCheck = await query('SELECT id FROM matches WHERE id = $1', [id]);
+    if (!matchCheck.rows[0]) return res.status(404).json({ error: 'Jogo não encontrado' });
+
+    // Apagar gols e assistências anteriores e reinserir
+    await query('DELETE FROM goals WHERE match_id = $1', [id]);
+    await query('DELETE FROM assists WHERE match_id = $1', [id]);
+
+    if (goals && goals.length > 0) {
+      for (const goal of goals) {
+        if (!goal.player_id && !goal.is_own_goal) continue;
+        await query(
+          'INSERT INTO goals (match_id, player_id, minute, is_own_goal, is_penalty) VALUES ($1, $2, $3, $4, $5)',
+          [id, goal.player_id || null, goal.minute || null, goal.is_own_goal || false, goal.is_penalty || false]
+        );
+      }
+    }
+
+    if (assists && assists.length > 0) {
+      for (const assist of assists) {
+        if (!assist.player_id) continue;
+        await query(
+          'INSERT INTO assists (match_id, player_id, minute) VALUES ($1, $2, $3)',
+          [id, assist.player_id, assist.minute || null]
+        );
+      }
+    }
+
+    res.json({ message: 'Gols e assistências atualizados com sucesso' });
+  } catch (error) {
+    console.error('Erro ao atualizar gols/assistências:', error);
+    res.status(500).json({ error: 'Erro ao atualizar gols e assistências' });
+  }
+};
+
+module.exports = { getMatches, getMatchById, createMatch, updateMatch, deleteMatch, getSeasons, getChampionships, updateMatchGoalsAssists };

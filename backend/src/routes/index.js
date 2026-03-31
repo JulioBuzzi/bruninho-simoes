@@ -1,41 +1,43 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const { authMiddleware, adminOnly, raterOnly } = require('../middleware/auth');
 
-// Controllers
 const { login, me } = require('../controllers/authController');
-const { getMatches, getMatchById, createMatch, updateMatch, deleteMatch, getSeasons, getChampionships } = require('../controllers/matchesController');
+const { getMatches, getMatchById, createMatch, updateMatch, deleteMatch, getSeasons, getChampionships, updateMatchGoalsAssists } = require('../controllers/matchesController');
 const { saveRatings, getPlayerRatings, getStats } = require('../controllers/ratingsController');
 const { getPlayers, getPlayerById, createPlayer, updatePlayer } = require('../controllers/playersController');
 const { getTeams, createTeam, updateTeam } = require('../controllers/teamsController');
 
-// ---- AUTH ----
+// ── AUTH ──
 router.post('/auth/login', login);
-router.get('/auth/me', auth, me);
+router.get('/auth/me', authMiddleware, me);
 
-// ---- MATCHES (público para leitura) ----
+// ── MATCHES (leitura pública) ──
 router.get('/matches', getMatches);
 router.get('/matches/seasons', getSeasons);
 router.get('/matches/championships', getChampionships);
 router.get('/matches/:id', getMatchById);
-router.post('/matches', auth, createMatch);
-router.put('/matches/:id', auth, updateMatch);
-router.delete('/matches/:id', auth, deleteMatch);
 
-// ---- RATINGS ----
-router.post('/ratings', auth, saveRatings);
+// ── MATCHES (escrita: só admin) ──
+router.post('/matches', authMiddleware, adminOnly, createMatch);
+router.put('/matches/:id', authMiddleware, adminOnly, updateMatch);
+router.delete('/matches/:id', authMiddleware, adminOnly, deleteMatch);
+router.put('/matches/:id/goals-assists', authMiddleware, adminOnly, updateMatchGoalsAssists);
+
+// ── RATINGS (notas: admin ou rater) ──
+router.post('/ratings', authMiddleware, raterOnly, saveRatings);
 router.get('/ratings/stats', getStats);
 router.get('/ratings/player/:playerId', getPlayerRatings);
 
-// ---- PLAYERS ----
+// ── PLAYERS (leitura pública, escrita só admin) ──
 router.get('/players', getPlayers);
 router.get('/players/:id', getPlayerById);
-router.post('/players', auth, createPlayer);
-router.put('/players/:id', auth, updatePlayer);
+router.post('/players', authMiddleware, adminOnly, createPlayer);
+router.put('/players/:id', authMiddleware, adminOnly, updatePlayer);
 
-// ---- TEAMS ----
+// ── TEAMS (leitura pública, escrita só admin) ──
 router.get('/teams', getTeams);
-router.post('/teams', auth, createTeam);
-router.put('/teams/:id', auth, updateTeam);
+router.post('/teams', authMiddleware, adminOnly, createTeam);
+router.put('/teams/:id', authMiddleware, adminOnly, updateTeam);
 
 module.exports = router;
