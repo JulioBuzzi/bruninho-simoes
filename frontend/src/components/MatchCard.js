@@ -122,6 +122,11 @@ export default function MatchCard({ match }) {
               {formatMatchDate(match.match_date)}
             </span>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              {!(match.team_avg > 0) && (
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', letterSpacing: '0.04em', fontStyle: 'italic' }}>
+                  Sem notas
+                </span>
+              )}
               {match.team_avg > 0 && (
                 <span style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
                   Média: <strong style={{ color: getRatingColor(match.team_avg) }}>{Number(match.team_avg).toFixed(1)}</strong>

@@ -296,53 +296,6 @@ function EditMatchPanel({ matchId, players, onDone }) {
         </div>
       </div>
 
-      {/* Formation */}
-      <div style={{ marginBottom:20 }}>
-        <label>Formação</label>
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginTop:6 }}>
-          {FORMATION_KEYS.map(f => (
-            <button key={f} type="button" onClick={() => { setFormation(f); setStarters(Array(11).fill(null)); }} style={{
-              padding:'6px 14px', borderRadius:8, cursor:'pointer',
-              background: formation===f ? 'var(--gold)' : 'var(--bg-secondary)',
-              color: formation===f ? '#000' : 'var(--text-secondary)',
-              fontFamily:'Barlow Condensed', fontWeight:700, fontSize:13,
-              border: `1px solid ${formation===f ? 'var(--gold)' : 'var(--border)'}`,
-            }}>{f}</button>
-          ))}
-        </div>
-      </div>
-
-      {/* Field */}
-      <div style={{ marginBottom:24 }}>
-        <p style={{ fontSize:12, color:'var(--text-muted)', marginBottom:12, fontFamily:'Barlow Condensed' }}>
-          Clique em um círculo para atribuir jogador.
-        </p>
-        <FootballFieldEditor
-          formation={formation}
-          starters={starters}
-          players={players}
-          onChange={handleFieldChange}
-        />
-        {selectorOpen && (
-          <div style={{ marginTop:12, background:'var(--bg-secondary)', border:'1px solid var(--border-bright)', borderRadius:12, padding:14 }}>
-            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
-              <span style={{ fontFamily:'Barlow Condensed', fontWeight:700, textTransform:'uppercase', fontSize:12 }}>Escolha jogador</span>
-              <button onClick={() => setSelectorOpen(null)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)' }}><X size={15} /></button>
-            </div>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-              {selectorOpen.current?.player_id && (
-                <button onClick={() => assignPlayer(selectorOpen.slotIndex, null)} style={{ padding:'5px 10px', borderRadius:8, cursor:'pointer', background:'rgba(232,0,28,0.1)', color:'var(--red-primary)', border:'1px solid rgba(232,0,28,0.3)', fontFamily:'Barlow', fontSize:12 }}>✕ Remover</button>
-              )}
-              {selectorOpen.available.map(p => (
-                <button key={p.id} onClick={() => assignPlayer(selectorOpen.slotIndex, p)} style={{ padding:'5px 10px', borderRadius:8, cursor:'pointer', background:'var(--bg-card)', color:'var(--text-primary)', border:'1px solid var(--border)', fontFamily:'Barlow', fontSize:12 }}>
-                  {p.number?`#${p.number} `:''}{p.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
       <GoalsAssistsForm
         goals={goals} assists={assists} players={players}
         addGoal={addGoal} removeGoal={removeGoal} updateGoal={upGoal}
