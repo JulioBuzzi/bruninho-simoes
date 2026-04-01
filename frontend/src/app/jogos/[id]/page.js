@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { formatMatchDate } from '../../../lib/dateUtils';
@@ -7,127 +7,6 @@ import { matchesApi } from '../../../lib/api';
 import RatingBadge from '../../../components/RatingBadge';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import { ArrowLeft, Star, Target, Zap, Home, Plane } from 'lucide-react';
-
-// ── Football pitch inline ─────────────────────────────────────────────────
-const FORMATIONS_MAP = {
-  '4-4-2':  [['GK'],['RB','CB','CB','LB'],['RM','CM','CM','LM'],['ST','ST']],
-  '4-3-3':  [['GK'],['RB','CB','CB','LB'],['CM','CM','CM'],['RW','ST','LW']],
-  '4-2-4':  [['GK'],['RB','CB','CB','LB'],['CM','CM'],['RW','ST','ST','LW']],
-  '4-1-4-1':[['GK'],['RB','CB','CB','LB'],['CDM'],['RM','CM','CM','LM'],['ST']],
-  '4-2-3-1':[['GK'],['RB','CB','CB','LB'],['CDM','CDM'],['RW','CAM','LW'],['ST']],
-  '3-5-2':  [['GK'],['CB','CB','CB'],['RWB','CM','CM','CM','LWB'],['ST','ST']],
-  '4-2-2-2':[['GK'],['RB','CB','CB','LB'],['CM','CM'],['CAM','CAM'],['ST','ST']],
-};
-
-const POSITION_SORT = {'Goleiro':1,'Lateral Direito':2,'Zagueiro':3,'Lateral Esquerdo':4,'Volante':5,'Meia':6,'Atacante':7};
-function sortByPos(arr) {
-  return [...arr].sort((a,b)=>{
-    const pa=POSITION_SORT[a.position_in_match||a.position]??99;
-    const pb=POSITION_SORT[b.position_in_match||b.position]??99;
-    return pa!==pb?pa-pb:(a.player_name||'').localeCompare(b.player_name||'');
-  });
-}
-
-function PitchView({ players }) {
-  const [formation, setFormation] = useState('4-3-3');
-  const lines = [...(FORMATIONS_MAP[formation] || FORMATIONS_MAP['4-3-3'])].reverse();
-  const sorted = sortByPos(players);
-  let idx = 0;
-
-  return (
-    <div style={{marginBottom:28}}>
-      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14,flexWrap:'wrap'}}>
-        <h3 style={{fontFamily:'Bebas Neue',fontSize:26,margin:0}}>
-          Campo — <span style={{color:'var(--red-primary)'}}>Escalação</span>
-        </h3>
-        <select
-          className="input"
-          style={{width:120}}
-          value={formation}
-          onChange={e=>setFormation(e.target.value)}
-        >
-          {Object.keys(FORMATIONS_MAP).map(f=><option key={f} value={f}>{f}</option>)}
-        </select>
-      </div>
-
-      <div style={{
-        position:'relative',width:'100%',maxWidth:400,margin:'0 auto',
-        background:'linear-gradient(180deg,#1a4a1a 0%,#1e5a1e 25%,#1a4a1a 50%,#1e5a1e 75%,#1a4a1a 100%)',
-        borderRadius:12,border:'3px solid #2d7a2d',overflow:'hidden',
-        paddingBottom:'138%',
-      }}>
-        <svg style={{position:'absolute',inset:0,width:'100%',height:'100%'}} viewBox="0 0 400 552" preserveAspectRatio="xMidYMid meet">
-          <rect x="8" y="8" width="384" height="536" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5"/>
-          <line x1="8" y1="276" x2="392" y2="276" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5"/>
-          <circle cx="200" cy="276" r="52" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5"/>
-          <circle cx="200" cy="276" r="2.5" fill="rgba(255,255,255,0.6)"/>
-          <rect x="90" y="8"   width="220" height="88"  fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5"/>
-          <rect x="140" y="8"  width="120" height="48"  fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5"/>
-          <circle cx="200" cy="76" r="2.5" fill="rgba(255,255,255,0.6)"/>
-          <rect x="90" y="456" width="220" height="88"  fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5"/>
-          <rect x="140" y="496" width="120" height="48" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5"/>
-          <circle cx="200" cy="476" r="2.5" fill="rgba(255,255,255,0.6)"/>
-          <rect x="162" y="3"   width="76" height="10" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5"/>
-          <rect x="162" y="539" width="76" height="10" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5"/>
-        </svg>
-
-        <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',justifyContent:'space-around',padding:'3% 2%'}}>
-          {lines.map((line, li)=>{
-            const linePlayers = line.map(()=>sorted[idx++]||null);
-            return (
-              <div key={li} style={{display:'flex',justifyContent:'space-around',alignItems:'center',flex:1}}>
-                {linePlayers.map((pl,si)=>{
-                  const hasRating = pl?.average_rating != null;
-                  const rColor = hasRating
-                    ? (parseFloat(pl.average_rating)>=7?'#00c853':parseFloat(pl.average_rating)>=5?'#f5c842':'#e8001c')
-                    : null;
-                  return (
-                    <Link key={si} href={pl?`/jogadores/${pl.player_id}`:'#'} style={{textDecoration:'none'}}>
-                      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2,minWidth:52}}>
-                        <div style={{
-                          width:42,height:42,borderRadius:'50%',overflow:'hidden',
-                          background:pl?'var(--red-primary)':'rgba(255,255,255,0.12)',
-                          border:pl?`2.5px solid ${rColor||'rgba(255,255,255,0.8)'}`:'2px dashed rgba(255,255,255,0.3)',
-                          display:'flex',alignItems:'center',justifyContent:'center',
-                          boxShadow:pl?'0 2px 6px rgba(0,0,0,0.5)':'none',
-                          position:'relative',
-                        }}>
-                          {pl?.photo_url
-                            ?<img src={pl.photo_url} alt={pl.player_name} style={{width:'100%',height:'100%',objectFit:'cover'}}
-                                onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='flex';}}/>
-                            :null}
-                          <span style={{display:pl?.photo_url?'none':'flex',alignItems:'center',justifyContent:'center',
-                            fontFamily:'Bebas Neue',fontSize:12,color:'white',width:'100%',height:'100%'}}>
-                            {pl?.number||line[si]?.slice(0,2)}
-                          </span>
-                          {/* Rating badge */}
-                          {hasRating && (
-                            <div style={{
-                              position:'absolute',bottom:-6,right:-4,
-                              background:rColor,borderRadius:4,padding:'0 4px',
-                              fontFamily:'Bebas Neue',fontSize:10,color:'white',
-                              boxShadow:'0 1px 4px rgba(0,0,0,0.6)',lineHeight:'16px',
-                            }}>{Number(pl.average_rating).toFixed(1)}</div>
-                          )}
-                        </div>
-                        <span style={{
-                          fontSize:9,fontFamily:'Barlow Condensed',fontWeight:700,
-                          color:'white',textShadow:'0 1px 3px rgba(0,0,0,0.9)',
-                          textAlign:'center',maxWidth:52,
-                          overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
-                        }}>{pl?.player_name?.split(' ').pop()||line[si]}</span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function MatchDetailPage() {
   const { id } = useParams();
@@ -275,9 +154,6 @@ export default function MatchDetailPage() {
           </div>
         )}
       </div>
-
-      {/* Football pitch */}
-      {players.length > 0 && <PitchView players={players} />}
 
       {/* Players table */}
       <h2 style={{ fontSize: 32, marginBottom: 20 }}>Notas dos <span style={{ color: 'var(--red-primary)' }}>Titulares</span></h2>

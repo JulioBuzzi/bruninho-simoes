@@ -236,20 +236,30 @@ function CreateMatchForm({ teams, players, onDone, onCancel }) {
 
 /* ─── EDIT MATCH PANEL ────────────────────────────────────────────────────── */
 function EditMatchPanel({ matchId, players, onDone }) {
-  const [data,    setData]    = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving,  setSaving]  = useState(false);
-  const [score,   setScore]   = useState({ flamengo_goals:0, opponent_goals:0 });
+  const [loading,  setLoading]  = useState(true);
+  const [saving,   setSaving]   = useState(false);
+  const [score,    setScore]    = useState({ flamengo_goals:0, opponent_goals:0 });
+  const [starters, setStarters] = useState([]);
   const [goals,    setGoals]    = useState([]);
   const [assists,  setAssists]  = useState([]);
+
   useEffect(() => {
     matchesApi.getById(matchId).then(d => {
-      setData(d);
       setScore({ flamengo_goals: d.match.flamengo_goals, opponent_goals: d.match.opponent_goals });
+      // Load existing starters as array of player_ids
+      setStarters(d.players.map(p => ({ player_id: p.player_id, position: p.position_in_match || p.position })));
       setGoals(d.goals.map(g => ({ player_id: g.player_id||'', minute: g.minute||'', is_own_goal: g.is_own_goal||false, is_penalty: g.is_penalty||false })));
       setAssists(d.assists.map(a => ({ player_id: a.player_id||'', minute: a.minute||'' })));
     }).finally(() => setLoading(false));
   }, [matchId]);
+
+  const toggleStarter = (player) => {
+    setStarters(prev => {
+      const exists = prev.find(s => s.player_id === player.id);
+      if (exists) return prev.filter(s => s.player_id !== player.id);
+      return [...prev, { player_id: player.id, position: player.position }];
+    });
+  };
 
   const addGoal    = () => setGoals(p  => [...p,  { player_id:'', minute:'', is_own_goal:false, is_penalty:false }]);
   const removeGoal = i  => setGoals(p  => p.filter((_,idx) => idx!==i));
@@ -264,6 +274,7 @@ function EditMatchPanel({ matchId, players, onDone }) {
       await matchesApi.updateGoalsAssists(matchId, {
         flamengo_goals: parseInt(score.flamengo_goals)||0,
         opponent_goals: parseInt(score.opponent_goals)||0,
+        starters,
         goals:   goals.filter(g => g.player_id||g.is_own_goal),
         assists: assists.filter(a => a.player_id),
       });
@@ -282,7 +293,7 @@ function EditMatchPanel({ matchId, players, onDone }) {
         <button onClick={onDone} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)' }}><X size={18} /></button>
       </div>
 
-      {/* Score edit */}
+      {/* Score */}
       <div style={{ display:'flex', gap:16, marginBottom:24, flexWrap:'wrap' }}>
         <div style={{ flex:1, minWidth:120 }}>
           <label>Gols Flamengo</label>
@@ -296,8 +307,35 @@ function EditMatchPanel({ matchId, players, onDone }) {
         </div>
       </div>
 
+      {/* Starters editor */}
+      <div style={{ paddingTop:20, borderTop:'1px solid var(--border)', marginBottom:24 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+          <label style={{ margin:0 }}>👕 Escalação</label>
+          <span style={{ fontSize:12, color: starters.length===11 ? 'var(--green)' : 'var(--text-muted)' }}>
+            {starters.length}/11 selecionados
+          </span>
+        </div>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+          {players.filter(p => p.active).map(player => {
+            const sel = starters.find(s => s.player_id === player.id);
+            return (
+              <button key={player.id} type="button" onClick={() => toggleStarter(player)} style={{
+                padding:'6px 14px', borderRadius:8, cursor:'pointer',
+                background: sel ? 'var(--gold)' : 'var(--bg-secondary)',
+                color: sel ? '#000' : 'var(--text-secondary)',
+                fontFamily:'Barlow', fontSize:13, fontWeight: sel ? 600 : 400,
+                border: `1px solid ${sel ? 'var(--gold)' : 'var(--border)'}`,
+                transition:'all 0.15s',
+              }}>
+                {player.number ? `#${player.number} ` : ''}{player.name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <GoalsAssistsForm
-        goals={goals} assists={assists} players={players}
+        goals={goals} assists={assists} players={players.filter(p => p.active)}
         addGoal={addGoal} removeGoal={removeGoal} updateGoal={upGoal}
         addAssist={addAssist} removeAssist={removeAssist} updateAssist={upAssist}
       />
