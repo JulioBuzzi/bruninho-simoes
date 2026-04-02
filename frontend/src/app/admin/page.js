@@ -271,16 +271,22 @@ function EditMatchPanel({ matchId, players, onDone }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await matchesApi.updateGoalsAssists(matchId, {
-        flamengo_goals: parseInt(score.flamengo_goals)||0,
-        opponent_goals: parseInt(score.opponent_goals)||0,
+      const payload = {
+        flamengo_goals: parseInt(score.flamengo_goals) || 0,
+        opponent_goals: parseInt(score.opponent_goals) || 0,
         starters,
-        goals:   goals.filter(g => g.player_id||g.is_own_goal),
+        goals:   goals.filter(g => g.player_id || g.is_own_goal),
         assists: assists.filter(a => a.player_id),
-      });
+      };
+      console.log('[EditMatchPanel] Enviando para API:', JSON.stringify(payload).slice(0, 300));
+      const result = await matchesApi.updateGoalsAssists(matchId, payload);
+      console.log('[EditMatchPanel] Resposta da API:', result);
       toast.success('Jogo atualizado!');
       onDone();
-    } catch { toast.error('Erro ao salvar'); }
+    } catch (err) {
+      console.error('[EditMatchPanel] Erro:', err.response?.data || err.message);
+      toast.error('Erro ao salvar: ' + (err.response?.data?.error || err.message));
+    }
     finally { setSaving(false); }
   };
 
