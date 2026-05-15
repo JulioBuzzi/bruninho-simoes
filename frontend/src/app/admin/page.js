@@ -145,7 +145,7 @@ function MatchesTab({ matches, teams, players, onRefresh }) {
 
 /* ─── CREATE MATCH FORM ───────────────────────────────────────────────────── */
 function CreateMatchForm({ teams, players, onDone, onCancel }) {
-  const empty = { match_date:'', championship:'Brasileirão', season:new Date().getFullYear(), opponent_id:'', flamengo_goals:0, opponent_goals:0, is_home:true, stadium:'', round:'', starters:[], goals:[], assists:[] };
+  const empty = { match_date:'', championship:'Brasileirão', season:new Date().getFullYear(), opponent_id:'', flamengo_goals:0, opponent_goals:0, is_home:true, stadium:'', round:'', starters:[], goals:[], assists:[], is_knockout:false, had_penalties:false, flamengo_penalties:0, opponent_penalties:0 };
   const [form, setForm]     = useState(empty);
   const [loading, setLoading] = useState(false);
   const addGoal    = () => setForm(p => ({ ...p, goals:   [...p.goals,   { player_id:'', minute:'', is_own_goal:false, is_penalty:false }] }));
@@ -197,7 +197,31 @@ function CreateMatchForm({ teams, players, onDone, onCancel }) {
         <div><label>Rodada/Fase</label><input className="input" value={form.round} onChange={e => setForm(p=>({...p,round:e.target.value}))} placeholder="Rodada 1" /></div>
       </div>
 
-
+      {/* Mata-mata / Pênaltis */}
+      <div style={{ display:'flex', flexWrap:'wrap', gap:24, marginBottom:24, padding:'16px 0', borderTop:'1px solid var(--border)' }}>
+        <label style={{ display:'flex', alignItems:'center', gap:8, margin:0, cursor:'pointer', fontSize:14, textTransform:'none', letterSpacing:0 }}>
+          <input type="checkbox" checked={form.is_knockout} onChange={e => setForm(p => ({ ...p, is_knockout: e.target.checked, had_penalties: e.target.checked ? p.had_penalties : false, flamengo_penalties: 0, opponent_penalties: 0 }))} />
+          <span style={{ fontWeight:600 }}>Mata-mata</span>
+        </label>
+        {form.is_knockout && (
+          <label style={{ display:'flex', alignItems:'center', gap:8, margin:0, cursor:'pointer', fontSize:14, textTransform:'none', letterSpacing:0 }}>
+            <input type="checkbox" checked={form.had_penalties} onChange={e => setForm(p => ({ ...p, had_penalties: e.target.checked, flamengo_penalties: 0, opponent_penalties: 0 }))} />
+            <span style={{ fontWeight:600 }}>Houve disputa de pênaltis</span>
+          </label>
+        )}
+        {form.is_knockout && form.had_penalties && (
+          <>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <label style={{ margin:0, fontSize:13, textTransform:'none', letterSpacing:0, color:'var(--text-muted)', whiteSpace:'nowrap' }}>Flamengo (pên.)</label>
+              <input type="number" min="0" className="input" style={{ width:70 }} value={form.flamengo_penalties} onChange={e => setForm(p=>({...p,flamengo_penalties:parseInt(e.target.value)||0}))} />
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <label style={{ margin:0, fontSize:13, textTransform:'none', letterSpacing:0, color:'var(--text-muted)', whiteSpace:'nowrap' }}>Adversário (pên.)</label>
+              <input type="number" min="0" className="input" style={{ width:70 }} value={form.opponent_penalties} onChange={e => setForm(p=>({...p,opponent_penalties:parseInt(e.target.value)||0}))} />
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Titulares */}
       <div style={{ paddingTop:20, borderTop:'1px solid var(--border)', marginBottom:24 }}>
@@ -236,17 +260,23 @@ function CreateMatchForm({ teams, players, onDone, onCancel }) {
 
 /* ─── EDIT MATCH PANEL ────────────────────────────────────────────────────── */
 function EditMatchPanel({ matchId, players, onDone }) {
-  const [loading,  setLoading]  = useState(true);
-  const [saving,   setSaving]   = useState(false);
-  const [score,    setScore]    = useState({ flamengo_goals:0, opponent_goals:0 });
-  const [starters, setStarters] = useState([]);
-  const [goals,    setGoals]    = useState([]);
-  const [assists,  setAssists]  = useState([]);
+  const [loading,   setLoading]   = useState(true);
+  const [saving,    setSaving]    = useState(false);
+  const [score,     setScore]     = useState({ flamengo_goals:0, opponent_goals:0 });
+  const [starters,  setStarters]  = useState([]);
+  const [goals,     setGoals]     = useState([]);
+  const [assists,   setAssists]   = useState([]);
+  const [knockout,  setKnockout]  = useState({ is_knockout:false, had_penalties:false, flamengo_penalties:0, opponent_penalties:0 });
 
   useEffect(() => {
     matchesApi.getById(matchId).then(d => {
       setScore({ flamengo_goals: d.match.flamengo_goals, opponent_goals: d.match.opponent_goals });
-      // Load existing starters as array of player_ids
+      setKnockout({
+        is_knockout:        d.match.is_knockout        || false,
+        had_penalties:      d.match.had_penalties      || false,
+        flamengo_penalties: d.match.flamengo_penalties ?? 0,
+        opponent_penalties: d.match.opponent_penalties ?? 0,
+      });
       setStarters(d.players.map(p => ({ player_id: p.player_id, position: p.position_in_match || p.position })));
       setGoals(d.goals.map(g => ({ player_id: g.player_id||'', minute: g.minute||'', is_own_goal: g.is_own_goal||false, is_penalty: g.is_penalty||false })));
       setAssists(d.assists.map(a => ({ player_id: a.player_id||'', minute: a.minute||'' })));
@@ -274,6 +304,10 @@ function EditMatchPanel({ matchId, players, onDone }) {
       const payload = {
         flamengo_goals: parseInt(score.flamengo_goals) || 0,
         opponent_goals: parseInt(score.opponent_goals) || 0,
+        is_knockout:        knockout.is_knockout,
+        had_penalties:      knockout.had_penalties,
+        flamengo_penalties: knockout.had_penalties ? (parseInt(knockout.flamengo_penalties) || 0) : null,
+        opponent_penalties: knockout.had_penalties ? (parseInt(knockout.opponent_penalties) || 0) : null,
         starters,
         goals:   goals.filter(g => g.player_id || g.is_own_goal),
         assists: assists.filter(a => a.player_id),
@@ -300,7 +334,7 @@ function EditMatchPanel({ matchId, players, onDone }) {
       </div>
 
       {/* Score */}
-      <div style={{ display:'flex', gap:16, marginBottom:24, flexWrap:'wrap' }}>
+      <div style={{ display:'flex', gap:16, marginBottom:16, flexWrap:'wrap' }}>
         <div style={{ flex:1, minWidth:120 }}>
           <label>Gols Flamengo</label>
           <input type="number" min="0" className="input" value={score.flamengo_goals}
@@ -311,6 +345,32 @@ function EditMatchPanel({ matchId, players, onDone }) {
           <input type="number" min="0" className="input" value={score.opponent_goals}
             onChange={e => setScore(p => ({...p, opponent_goals: e.target.value}))} />
         </div>
+      </div>
+
+      {/* Mata-mata / Pênaltis */}
+      <div style={{ display:'flex', flexWrap:'wrap', gap:24, marginBottom:24, padding:'16px 0', borderTop:'1px solid var(--border)' }}>
+        <label style={{ display:'flex', alignItems:'center', gap:8, margin:0, cursor:'pointer', fontSize:14, textTransform:'none', letterSpacing:0 }}>
+          <input type="checkbox" checked={knockout.is_knockout} onChange={e => setKnockout(p => ({ ...p, is_knockout: e.target.checked, had_penalties: e.target.checked ? p.had_penalties : false, flamengo_penalties: 0, opponent_penalties: 0 }))} />
+          <span style={{ fontWeight:600 }}>Mata-mata</span>
+        </label>
+        {knockout.is_knockout && (
+          <label style={{ display:'flex', alignItems:'center', gap:8, margin:0, cursor:'pointer', fontSize:14, textTransform:'none', letterSpacing:0 }}>
+            <input type="checkbox" checked={knockout.had_penalties} onChange={e => setKnockout(p => ({ ...p, had_penalties: e.target.checked, flamengo_penalties: 0, opponent_penalties: 0 }))} />
+            <span style={{ fontWeight:600 }}>Houve disputa de pênaltis</span>
+          </label>
+        )}
+        {knockout.is_knockout && knockout.had_penalties && (
+          <>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <label style={{ margin:0, fontSize:13, textTransform:'none', letterSpacing:0, color:'var(--text-muted)', whiteSpace:'nowrap' }}>Flamengo (pên.)</label>
+              <input type="number" min="0" className="input" style={{ width:70 }} value={knockout.flamengo_penalties} onChange={e => setKnockout(p=>({...p,flamengo_penalties:parseInt(e.target.value)||0}))} />
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <label style={{ margin:0, fontSize:13, textTransform:'none', letterSpacing:0, color:'var(--text-muted)', whiteSpace:'nowrap' }}>Adversário (pên.)</label>
+              <input type="number" min="0" className="input" style={{ width:70 }} value={knockout.opponent_penalties} onChange={e => setKnockout(p=>({...p,opponent_penalties:parseInt(e.target.value)||0}))} />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Starters editor */}

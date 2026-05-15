@@ -57,6 +57,10 @@ CREATE TABLE matches (
   stadium VARCHAR(150),
   round VARCHAR(50), -- Rodada/fase
   notes TEXT, -- Observações gerais do jogo
+  is_knockout BOOLEAN DEFAULT FALSE, -- TRUE = mata-mata
+  had_penalties BOOLEAN DEFAULT FALSE, -- houve disputa de pênaltis
+  flamengo_penalties INTEGER, -- gols do Flamengo nos pênaltis
+  opponent_penalties INTEGER, -- gols do adversário nos pênaltis
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
