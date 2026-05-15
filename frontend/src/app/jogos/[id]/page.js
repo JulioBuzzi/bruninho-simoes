@@ -58,6 +58,7 @@ export default function MatchDetailPage() {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <span className="badge badge-red">{match.championship}</span>
             {match.round && <span className="badge badge-gray">{match.round}</span>}
+            {match.is_knockout && <span className="badge" style={{ background:'rgba(245,200,66,0.15)', color:'var(--gold)', border:'1px solid rgba(245,200,66,0.4)' }}>⚔️ Mata-Mata</span>}
             <span className="badge" style={{ background: `${resultColor}20`, color: resultColor, border: `1px solid ${resultColor}40` }}>{resultLabel}</span>
             <span className="badge badge-gray">{match.is_home ? <><Home size={10} /> Casa</> : <><Plane size={10} /> Fora</>}</span>
           </div>
@@ -75,6 +76,12 @@ export default function MatchDetailPage() {
             <div style={{ fontFamily: 'Bebas Neue', fontSize: 72, letterSpacing: '0.05em', color: resultColor, lineHeight: 1 }}>
               {match.flamengo_goals} <span style={{ color: 'var(--text-muted)', fontSize: 40 }}>×</span> {match.opponent_goals}
             </div>
+            {match.had_penalties && (
+              <div style={{ fontFamily: 'Bebas Neue', fontSize: 22, color: 'var(--text-muted)', letterSpacing: '0.04em', marginTop: 4 }}>
+                <span style={{ fontSize: 12, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginRight: 8 }}>Pênaltis</span>
+                {match.flamengo_penalties} <span style={{ fontSize: 16 }}>×</span> {match.opponent_penalties}
+              </div>
+            )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 64, height: 64, borderRadius: 12, overflow: 'hidden', background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

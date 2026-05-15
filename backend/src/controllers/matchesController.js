@@ -60,13 +60,16 @@ const getMatchById = async (req, res) => {
 
 const createMatch = async (req, res) => {
   try {
-    const { match_date, championship, season, opponent_id, flamengo_goals, opponent_goals, is_home, stadium, round, notes, starters, goals, assists } = req.body;
+    const { match_date, championship, season, opponent_id, flamengo_goals, opponent_goals, is_home, stadium, round, notes, starters, goals, assists, is_knockout, had_penalties, flamengo_penalties, opponent_penalties } = req.body;
     if (!match_date || !opponent_id) return res.status(400).json({ error: 'match_date e opponent_id são obrigatórios' });
     const matchResult = await query(`
-      INSERT INTO matches (match_date, championship, season, opponent_id, flamengo_goals, opponent_goals, is_home, stadium, round, notes)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+      INSERT INTO matches (match_date, championship, season, opponent_id, flamengo_goals, opponent_goals, is_home, stadium, round, notes, is_knockout, had_penalties, flamengo_penalties, opponent_penalties)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
       [match_date, championship || 'Brasileirão', season || new Date().getFullYear(), opponent_id,
-       flamengo_goals ?? 0, opponent_goals ?? 0, is_home !== false, stadium, round, notes]);
+       flamengo_goals ?? 0, opponent_goals ?? 0, is_home !== false, stadium, round, notes,
+       is_knockout || false, had_penalties || false,
+       had_penalties ? (flamengo_penalties ?? null) : null,
+       had_penalties ? (opponent_penalties ?? null) : null]);
     const match = matchResult.rows[0];
     if (starters?.length) for (const s of starters) await query(`INSERT INTO match_players (match_id, player_id, is_starter, position_in_match) VALUES ($1,$2,TRUE,$3) ON CONFLICT DO NOTHING`, [match.id, s.player_id, s.position]);
     if (goals?.length)   for (const g of goals)   if (g.player_id || g.is_own_goal) await query(`INSERT INTO goals (match_id, player_id, minute, is_own_goal, is_penalty) VALUES ($1,$2,$3,$4,$5)`, [match.id, g.player_id||null, g.minute||null, g.is_own_goal||false, g.is_penalty||false]);
@@ -99,7 +102,7 @@ const updateMatchGoalsAssists = async (req, res) => {
     const { id } = req.params;
     console.log(`[updateMatchGoalsAssists] Recebido para match ${id}:`, JSON.stringify(req.body).slice(0, 200));
 
-    const { goals, assists, flamengo_goals, opponent_goals, starters } = req.body;
+    const { goals, assists, flamengo_goals, opponent_goals, starters, is_knockout, had_penalties, flamengo_penalties, opponent_penalties } = req.body;
 
     // Verificar se o jogo existe
     const matchCheck = await query('SELECT id FROM matches WHERE id = $1', [id]);
@@ -107,10 +110,17 @@ const updateMatchGoalsAssists = async (req, res) => {
       return res.status(404).json({ error: 'Jogo não encontrado' });
     }
 
-    // Atualizar placar sempre (mesmo que seja 0)
+    // Atualizar placar + mata-mata/pênaltis
     await query(
-      `UPDATE matches SET flamengo_goals = $1, opponent_goals = $2, updated_at = NOW() WHERE id = $3`,
-      [parseInt(flamengo_goals) || 0, parseInt(opponent_goals) || 0, id]
+      `UPDATE matches SET flamengo_goals = $1, opponent_goals = $2,
+        is_knockout = $3, had_penalties = $4,
+        flamengo_penalties = $5, opponent_penalties = $6,
+        updated_at = NOW() WHERE id = $7`,
+      [parseInt(flamengo_goals) || 0, parseInt(opponent_goals) || 0,
+       is_knockout || false, had_penalties || false,
+       had_penalties ? (flamengo_penalties ?? null) : null,
+       had_penalties ? (opponent_penalties ?? null) : null,
+       id]
     );
     console.log(`[updateMatchGoalsAssists] Placar atualizado: ${flamengo_goals} x ${opponent_goals}`);
 
