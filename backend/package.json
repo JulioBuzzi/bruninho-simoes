@@ -6,7 +6,12 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "build": "echo 'No build step needed'"
+    "build": "echo 'No build step needed'",
+    "db:list": "node dbUtils.js list",
+    "db:migrate": "node migrateFromSupabase.js",
+    "db:migrate-file": "node migrateFromSupabase.js from-file",
+    "db:backup": "cp data.json backup/data_$(date +\\%Y\\%m\\%d_\\%H\\%M\\%S).json && echo '✅ Backup criado'",
+    "db:reset": "node dbUtils.js reset"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

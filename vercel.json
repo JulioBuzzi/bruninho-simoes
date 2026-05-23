@@ -1,0 +1,12 @@
+{
+  "buildCommand": "npm install --prefix backend",
+  "outputDirectory": "backend",
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "backend/src/server.js": {
+      "runtime": "nodejs18.x"
+    }
+  }
+}

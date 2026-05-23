@@ -9,7 +9,7 @@ const pool = new Pool({
 });
 
 pool.on('error', (err) => {
-  console.error('Erro inesperado no pool do banco de dados:', err);
+  console.error('❌ Erro no banco de dados:', err.message);
 });
 
 const query = async (text, params) => {
@@ -18,11 +18,11 @@ const query = async (text, params) => {
     const res = await pool.query(text, params);
     const duration = Date.now() - start;
     if (process.env.NODE_ENV === 'development') {
-      console.log('Query executada:', { text: text.substring(0, 80), duration, rows: res.rowCount });
+      console.log('📊 Query:', { duration: `${duration}ms`, rows: res.rowCount });
     }
     return res;
   } catch (error) {
-    console.error('Erro na query:', { text: text.substring(0, 80), error: error.message });
+    console.error('❌ Erro na query:', error.message);
     throw error;
   }
 };
