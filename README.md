@@ -8,9 +8,8 @@ Sistema completo para o canal [Bruninho e Simões](https://www.youtube.com/@Brun
 - **Banco:** PostgreSQL → Supabase
 - **Auth:** JWT + bcrypt
 
-## Início Rápido
-
-Leia o guia completo: **[DEPLOY.md](./DEPLOY.md)**
+## Deploy ativo
+https://bruninho-simoes.vercel.app
 
 ## Estrutura
 ```
