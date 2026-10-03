@@ -21,10 +21,7 @@ const login = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
-    res.json({
-      token,
-      user: { id: user.id, username: user.username, role: user.role }
-    });
+    res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
   } catch (error) {
     console.error('Erro no login:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
@@ -35,4 +32,32 @@ const me = async (req, res) => {
   res.json({ user: req.user });
 };
 
-module.exports = { login, me };
+// Renova o token sem precisar fazer login novamente
+// Só renova se o token atual ainda for válido (não expirado)
+const refresh = async (req, res) => {
+  try {
+    const { id, username, role } = req.user; // vem do authMiddleware
+
+    // Verificar se o usuário ainda existe no banco
+    const result = await query('SELECT id, username, role FROM users WHERE id = $1', [id]);
+    if (!result.rows[0]) {
+      return res.status(401).json({ error: 'Usuário não encontrado' });
+    }
+
+    const newToken = jwt.sign(
+      { id, username, role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
+
+    res.json({
+      token: newToken,
+      user: { id, username, role }
+    });
+  } catch (error) {
+    console.error('Erro ao renovar token:', error);
+    res.status(500).json({ error: 'Erro ao renovar sessão' });
+  }
+};
+
+module.exports = { login, me, refresh };

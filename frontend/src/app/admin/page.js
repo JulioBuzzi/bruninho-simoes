@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { matchesApi, playersApi, teamsApi, ratingsApi } from '../../lib/api';
+import RatingsTab from './ratingsTab';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import toast from 'react-hot-toast';
 import { Plus, LogOut, Save, Trash2, Pencil, X, ChevronDown, ChevronUp } from 'lucide-react';
@@ -400,133 +401,6 @@ function GoalsAssistsForm({ goals, assists, players, addGoal, removeGoal, update
         ))}
       </div>
     </>
-  );
-}
-
-/* ─── RATINGS TAB ─────────────────────────────────────────────────────────── */
-function RatingsTab({ matches, players, currentUser, onRefresh }) {
-  const [selectedMatch, setSelectedMatch] = useState('');
-  const [matchData,     setMatchData]     = useState(null);
-  const [ratings,       setRatings]       = useState({});
-  const [loading,       setLoading]       = useState(false);
-  const [saving,        setSaving]        = useState(false);
-
-  const loadMatch = async (matchId) => {
-    if (!matchId) return;
-    setLoading(true);
-    try {
-      const data = await matchesApi.getById(matchId);
-      setMatchData(data);
-      const r = {};
-      data.players.forEach(p => { r[p.player_id] = { bruninho: p.bruninho_rating??'', simoes: p.simoes_rating??'' }; });
-      setRatings(r);
-    } catch { toast.error('Erro ao carregar jogo'); }
-    finally { setLoading(false); }
-  };
-
-  const handleSave = async () => {
-    if (!selectedMatch) return;
-    setSaving(true);
-    try {
-      const list = Object.entries(ratings).map(([player_id, r]) => ({
-        player_id,
-        bruninho_rating: r.bruninho !== '' ? parseFloat(r.bruninho) : null,
-        simoes_rating:   r.simoes   !== '' ? parseFloat(r.simoes)   : null,
-      })).filter(r => r.bruninho_rating!==null||r.simoes_rating!==null);
-      await ratingsApi.save({ match_id: selectedMatch, ratings: list });
-      toast.success('Notas salvas!');
-      onRefresh();
-    } catch { toast.error('Erro ao salvar'); }
-    finally { setSaving(false); }
-  };
-
-  const m = matchData?.match;
-
-  return (
-    <div>
-      <h2 style={{ fontSize:28, marginBottom:20 }}>Inserir Notas</h2>
-
-      <div style={{ display:'flex', gap:16, alignItems:'flex-end', marginBottom:24, flexWrap:'wrap' }}>
-        <div style={{ minWidth:300, flex:1 }}>
-          <label>Selecione o Jogo</label>
-          <select className="input" value={selectedMatch} onChange={e => { setSelectedMatch(e.target.value); loadMatch(e.target.value); }}>
-            <option value="">Selecione...</option>
-            {matches.map(m => (
-              <option key={m.id} value={m.id}>{m.match_date?.slice(0,10)} • FLA {m.flamengo_goals}×{m.opponent_goals} {m.opponent_name} ({m.championship})</option>
-            ))}
-          </select>
-        </div>
-        {selectedMatch && <button className="btn btn-primary" onClick={handleSave} disabled={saving}><Save size={16} />{saving?'Salvando...':'Salvar Notas'}</button>}
-      </div>
-
-      {loading && <LoadingSpinner text="Carregando titulares..." />}
-
-      {matchData && !loading && (
-        <>
-          <div style={{ background:'var(--bg-secondary)', borderRadius:12, padding:'12px 16px', marginBottom:20, display:'flex', gap:16, alignItems:'center', flexWrap:'wrap' }}>
-            <span style={{ fontFamily:'Bebas Neue', fontSize:20 }}>FLA {m.flamengo_goals} × {m.opponent_goals} {m.opponent_name}</span>
-            <span className="badge badge-gray">{m.championship}</span>
-            <span style={{ fontSize:13, color:'var(--text-muted)' }}>{m.match_date?.slice(0,10)}</span>
-          </div>
-
-          {matchData.players.length === 0 ? (
-            <div className="card" style={{ textAlign:'center', color:'var(--text-muted)', padding:40 }}>
-              Jogo sem titulares cadastrados. Use a aba de Jogos para editar a escalação.
-            </div>
-          ) : (
-            <div className="card" style={{ padding:0, overflow:'hidden' }}>
-              <table style={{ width:'100%', borderCollapse:'collapse' }}>
-                <thead>
-                  <tr style={{ background:'var(--bg-secondary)' }}>
-                    <th style={thStyle}>Jogador</th>
-                    <th style={{...thStyle, textAlign:'center'}}>Pos.</th>
-                    <th style={{...thStyle, textAlign:'center', color:'var(--red-primary)'}}>🎤 Simões (0-10)</th>
-                    <th style={{...thStyle, textAlign:'center', color:'#448aff'}}>🎙️ Bruninho (0-10)</th>
-                    <th style={{...thStyle, textAlign:'center'}}>Média</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortByPosition(matchData.players).map((player, i) => {
-                    const r   = ratings[player.player_id] || { bruninho:'', simoes:'' };
-                    const both = r.bruninho!==''&&r.simoes!=='';
-                    const avg = both ? ((parseFloat(r.bruninho)+parseFloat(r.simoes))/2).toFixed(2)
-                      : r.bruninho!=='' ? parseFloat(r.bruninho).toFixed(1)
-                      : r.simoes!==''   ? parseFloat(r.simoes).toFixed(1) : '—';
-                    return (
-                      <tr key={player.player_id} style={{ borderBottom:'1px solid var(--border)', background:i%2===0?'transparent':'rgba(255,255,255,0.01)' }}>
-                        <td style={{ padding:'12px 16px', fontWeight:600 }}>
-                          {player.number && <span style={{ color:'var(--text-muted)', marginRight:8, fontFamily:'Barlow Condensed' }}>#{player.number}</span>}
-                          {player.player_name}
-                        </td>
-                        <td style={{ padding:'12px 16px', textAlign:'center', fontSize:12, color:'var(--text-muted)', fontFamily:'Barlow Condensed' }}>{player.position}</td>
-                        <td style={{ padding:'8px 16px', textAlign:'center' }}>
-                          <input type="number" min="0" max="10" step="0.5" className="input"
-                            value={r.simoes}
-                            onChange={e => setRatings(prev => ({ ...prev, [player.player_id]: { ...prev[player.player_id], simoes: e.target.value } }))}
-                            style={{ width:80, textAlign:'center', margin:'0 auto' }} placeholder="—" />
-                        </td>
-                        <td style={{ padding:'8px 16px', textAlign:'center' }}>
-                          <input type="number" min="0" max="10" step="0.5" className="input"
-                            value={r.bruninho}
-                            onChange={e => setRatings(prev => ({ ...prev, [player.player_id]: { ...prev[player.player_id], bruninho: e.target.value } }))}
-                            style={{ width:80, textAlign:'center', margin:'0 auto' }} placeholder="—" />
-                        </td>
-                        <td style={{ padding:'12px 16px', textAlign:'center', fontFamily:'Bebas Neue', fontSize:20, color:avg!=='—'?getRatingColor(avg):'var(--text-muted)' }}>{avg}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-          {matchData.players.length > 0 && (
-            <div style={{ marginTop:20 }}>
-              <button className="btn btn-primary" onClick={handleSave} disabled={saving}><Save size={16} />{saving?'Salvando...':'Salvar Todas as Notas'}</button>
-            </div>
-          )}
-        </>
-      )}
-    </div>
   );
 }
 
