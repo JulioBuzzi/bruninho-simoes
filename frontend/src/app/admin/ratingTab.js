@@ -177,35 +177,6 @@ export default function RatingsTab({ matches, players, currentUser, onRefresh })
             <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{m.match_date?.slice(0, 10)}</span>
           </div>
 
-          {/* Progress bar */}
-          {totalPlayers > 0 && (
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <span style={{ fontSize: 12, fontFamily: 'Barlow Condensed', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
-                  {filledCount}/{totalPlayers} jogadores com as duas notas preenchidas
-                  {filledCount > 0 && filledCount < totalPlayers && (
-                    <span style={{ marginLeft: 8, color: 'var(--gold)' }}>
-                      <Clock size={12} style={{ verticalAlign: 'middle' }} /> Salvamento automático ativo
-                    </span>
-                  )}
-                </span>
-                {allFilled && (
-                  <span style={{ fontSize: 12, color: 'var(--green)', fontFamily: 'Barlow Condensed', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <CheckCircle size={14} /> Todas as notas preenchidas!
-                  </span>
-                )}
-              </div>
-              <div style={{ height: 6, background: 'var(--bg-secondary)', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%', borderRadius: 3,
-                  width: `${totalPlayers > 0 ? (filledCount / totalPlayers) * 100 : 0}%`,
-                  background: allFilled ? 'var(--green)' : 'var(--gold)',
-                  transition: 'width 0.4s ease',
-                }} />
-              </div>
-            </div>
-          )}
-
           {matchData.players.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>
               Jogo sem titulares cadastrados. Use a aba de Jogos para editar a escalação.
@@ -281,15 +252,40 @@ export default function RatingsTab({ matches, players, currentUser, onRefresh })
               </table>
             </div>
           )}
+          {/* Progress bar */}
+          {totalPlayers > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, fontFamily: 'Barlow Condensed', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+                  {filledCount}/{totalPlayers} jogadores com as duas notas preenchidas
+                  {filledCount > 0 && filledCount < totalPlayers && (
+                    <span style={{ marginLeft: 8, color: 'var(--gold)' }}>
+                      <Clock size={12} style={{ verticalAlign: 'middle' }} /> Salvamento automático ativo
+                    </span>
+                  )}
+                </span>
+                {allFilled && (
+                  <span style={{ fontSize: 12, color: 'var(--green)', fontFamily: 'Barlow Condensed', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <CheckCircle size={14} /> Todas as notas preenchidas!
+                  </span>
+                )}
+              </div>
+              <div style={{ height: 6, background: 'var(--bg-secondary)', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 3,
+                  width: `${totalPlayers > 0 ? (filledCount / totalPlayers) * 100 : 0}%`,
+                  background: allFilled ? 'var(--green)' : 'var(--gold)',
+                  transition: 'width 0.4s ease',
+                }} />
+              </div>
+            </div>
+          )}
 
           {matchData.players.length > 0 && (
             <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
               <button className="btn btn-primary" onClick={handleManualSave} disabled={saving}>
                 <Save size={16} /> {saving ? 'Salvando...' : 'Salvar Todas as Notas'}
               </button>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed' }}>
-                As notas também são salvas automaticamente quando as duas notas de um jogador são preenchidas.
-              </span>
             </div>
           )}
         </>
