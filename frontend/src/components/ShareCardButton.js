@@ -15,6 +15,7 @@ export default function ShareCardButton({ data }) {
   const [loading, setLoading] = useState(false);
   const [blob, setBlob]       = useState(null);
   const [url, setUrl]         = useState(null);
+  const [dataUrl, setDataUrl] = useState(null); // usado no download (não depende de blob:)
   const [error, setError]     = useState(false);
   const closeRef              = useRef(null);
 
@@ -30,6 +31,14 @@ export default function ShareCardButton({ data }) {
       const b = await generateMatchCard(data);
       setBlob(b);
       setUrl(URL.createObjectURL(b));
+      // Versão "data:" da mesma imagem: o download fica 100% dentro do navegador.
+      // Com link blob:, o Edge e gerenciadores de download (IDM etc.) travam em 100% sem salvar.
+      setDataUrl(await new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result);
+        fr.onerror = reject;
+        fr.readAsDataURL(b);
+      }));
     } catch {
       setError(true);
     } finally {
@@ -53,10 +62,10 @@ export default function ShareCardButton({ data }) {
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = old; };
   }, [open]);
 
-  // Download direto do PNG já gerado em memória (sem novo processamento, sem perder qualidade)
+  // Download direto do PNG já gerado (sem novo processamento, sem perder qualidade)
   const handleDownload = () => {
     const a = document.createElement('a');
-    a.href = url;
+    a.href = dataUrl || url;
     a.download = fileName;
     document.body.appendChild(a);
     a.click();
