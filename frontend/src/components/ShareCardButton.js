@@ -17,6 +17,7 @@ export default function ShareCardButton({ data }) {
   const [url, setUrl]         = useState(null);
   const [dataUrl, setDataUrl] = useState(null); // usado no download (não depende de blob:)
   const [error, setError]     = useState(false);
+  const [saved, setSaved]     = useState(false);
   const closeRef              = useRef(null);
 
   const { match } = data;
@@ -24,6 +25,7 @@ export default function ShareCardButton({ data }) {
 
   const handleOpen = async () => {
     setOpen(true);
+    setSaved(false);
     if (blob) return; // já gerada: reabre na hora
     setLoading(true);
     setError(false);
@@ -62,14 +64,39 @@ export default function ShareCardButton({ data }) {
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = old; };
   }, [open]);
 
-  // Download direto do PNG já gerado (sem novo processamento, sem perder qualidade)
-  const handleDownload = () => {
+  // Baixar a imagem já gerada (sem novo processamento, sem perder qualidade).
+  // 1) No computador (Chrome, Edge, Opera): abre a janela "Salvar como" do sistema e grava o arquivo
+  //    direto na pasta escolhida. Não passa pelo gerenciador de downloads do navegador, que no Opera
+  //    trava em 100% com imagens geradas pela página.
+  // 2) Onde essa janela não existe (celular, Firefox, Safari): download normal pelo link.
+  const downloadViaLink = () => {
     const a = document.createElement('a');
     a.href = dataUrl || url;
     a.download = fileName;
     document.body.appendChild(a);
     a.click();
     a.remove();
+  };
+
+  const handleDownload = async () => {
+    const isTouch = typeof window !== 'undefined' && window.matchMedia?.('(hover: none)').matches;
+    if (!isTouch && typeof window.showSaveFilePicker === 'function' && blob) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: fileName,
+          types: [{ description: 'Imagem PNG', accept: { 'image/png': ['.png'] } }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        setSaved(true);
+        return;
+      } catch (err) {
+        if (err?.name === 'AbortError') return; // usuário fechou a janela sem salvar
+        // qualquer outro problema: tenta o download normal
+      }
+    }
+    downloadViaLink();
   };
 
   return (
@@ -119,7 +146,7 @@ export default function ShareCardButton({ data }) {
             {url && !loading && (
               <div style={{ display: 'flex', gap: 10, padding: '12px 16px', borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
                 <button type="button" className="btn btn-primary" onClick={handleDownload} style={{ flex: 1, justifyContent: 'center' }}>
-                  <Download size={16} /> Baixar imagem
+                  <Download size={16} /> {saved ? 'Imagem salva ✓' : 'Baixar imagem'}
                 </button>
               </div>
             )}
