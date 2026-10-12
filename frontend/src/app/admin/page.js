@@ -2,11 +2,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { matchesApi, playersApi, teamsApi, ratingsApi } from '../../lib/api';
+import { matchesApi, playersApi, teamsApi } from '../../lib/api';
 import RatingsTab from './ratingsTab';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import toast from 'react-hot-toast';
-import { Plus, LogOut, Save, Trash2, Pencil, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, LogOut, Save, Trash2, Pencil, X } from 'lucide-react';
 
 const CHAMPIONSHIPS = ['Brasileirão','Carioca','Libertadores','Copa do Brasil','Supercopa','Recopa','Amistoso'];
 const POSITIONS     = ['Goleiro','Zagueiro','Lateral Direito','Lateral Esquerdo','Volante','Meia','Atacante'];
