@@ -317,7 +317,6 @@ export async function generateMatchCard(data) {
   const photoSize = rowH - 14;
   const pillH = Math.round(rowH * 0.72);
   const nameFont = Math.round(Math.min(38, rowH * 0.5));
-  const posFont = Math.round(Math.min(22, rowH * 0.29));
 
   players.forEach((p, i) => {
     const y = listTop + i * (rowH + rowGap);
@@ -346,35 +345,29 @@ export async function generateMatchCard(data) {
       ctx.fillText(String(p.number || '#'), px + photoSize / 2, py + photoSize / 2 + 2);
     }
 
-    // Nome + posição + selo
+    // Nome (centralizado na altura da linha) + selo CRAQUE/BAGRE
     const nx = px + photoSize + 18;
-    const nameY = y + rowH * 0.5 + nameFont * 0.12;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
-    ctx.font = `600 ${nameFont}px "Barlow"`;
-    ctx.fillStyle = C.text;
+    const midY = y + rowH / 2;
     const tag = isCraque ? 'CRAQUE' : isBagre ? 'BAGRE' : '';
     const tagFont = Math.round(nameFont * 0.56);
     ctx.font = `700 ${tagFont}px "Barlow Condensed"`;
     const tw = tag ? ctx.measureText(tag).width + 24 : 0;
     ctx.font = `600 ${nameFont}px "Barlow"`;
     const name = fitText(ctx, p.player_name, colS - nx - (tag ? tw + 26 : 16));
-    ctx.fillText(name, nx, nameY);
-    ctx.font = `600 ${posFont}px "Barlow Condensed"`;
-    ctx.fillStyle = C.muted;
-    ctx.fillText((p.position_in_match || p.position || '').toUpperCase(), nx, nameY + posFont + 6);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = C.text;
+    ctx.fillText(name, nx, midY + 1);
     if (tag) {
-      ctx.font = `600 ${nameFont}px "Barlow"`;
       const tx = nx + ctx.measureText(name).width + 14;
       const th = Math.round(tagFont * 1.6);
-      roundRect(ctx, tx, nameY - nameFont * 0.72 - (th - nameFont * 0.72) / 2, tw, th, th / 2);
+      roundRect(ctx, tx, midY - th / 2, tw, th, th / 2);
       ctx.fillStyle = isCraque ? 'rgba(245,200,66,0.2)' : 'rgba(232,0,28,0.2)';
       ctx.fill();
       ctx.font = `700 ${tagFont}px "Barlow Condensed"`;
       ctx.fillStyle = isCraque ? C.gold : '#ff3d4f';
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(tag, tx + tw / 2, nameY - nameFont * 0.36);
+      ctx.fillText(tag, tx + tw / 2, midY + 1);
     }
 
     // Notas
