@@ -11,8 +11,15 @@ const getMatches = async (req, res) => {
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const sql = `
       SELECT m.*, t.name AS opponent_name, t.short_name AS opponent_short, t.logo_url AS opponent_logo,
-        COALESCE(mh.mvp_name,'') AS mvp_name, COALESCE(mh.mvp_rating,0) AS mvp_rating,
-        COALESCE(mh.bagre_name,'') AS bagre_name, COALESCE(mh.bagre_rating,0) AS bagre_rating,
+        -- Craque/bagre: todos os jogadores empatados na maior/menor média (a view usa LIMIT 1 e escolhia só um)
+        COALESCE((
+          SELECT STRING_AGG(p.name, ', ' ORDER BY p.name) FROM ratings rx JOIN players p ON p.id = rx.player_id
+          WHERE rx.match_id = m.id AND rx.average_rating = (SELECT MAX(ry.average_rating) FROM ratings ry WHERE ry.match_id = m.id)
+        ),'') AS mvp_name, COALESCE(mh.mvp_rating,0) AS mvp_rating,
+        COALESCE((
+          SELECT STRING_AGG(p.name, ', ' ORDER BY p.name) FROM ratings rx JOIN players p ON p.id = rx.player_id
+          WHERE rx.match_id = m.id AND rx.average_rating = (SELECT MIN(ry.average_rating) FROM ratings ry WHERE ry.match_id = m.id)
+        ),'') AS bagre_name, COALESCE(mh.bagre_rating,0) AS bagre_rating,
         COALESCE(mh.team_avg,0) AS team_avg, COUNT(mp.id) AS starters_count
       FROM matches m JOIN teams t ON t.id = m.opponent_id
       LEFT JOIN match_highlights mh ON mh.match_id = m.id

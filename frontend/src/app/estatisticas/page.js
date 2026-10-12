@@ -1,8 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ratingsApi, matchesApi } from '../../lib/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import PlayerGamesModal from '../../components/PlayerGamesModal';
 import { BarChart3, Trophy, Users, Filter } from 'lucide-react';
 
 export default function StatisticsPage() {
@@ -13,6 +14,10 @@ export default function StatisticsPage() {
   const [championships, setChampionships] = useState([]);
   const [filterChamp, setFilterChamp]     = useState('');  // '' = todos
   const [tab, setTab]               = useState('ranking');
+  // Painel de detalhes: { player, column, championship } ou null
+  const [detail, setDetail]         = useState(null);
+  const openDetail  = useCallback((player, column, championship = '') => setDetail({ player, column, championship }), []);
+  const closeDetail = useCallback(() => setDetail(null), []);
 
   useEffect(() => {
     matchesApi.getSeasons().then(s => { if (s.length) setSeasons(s.map(String)); }).catch(() => {});
@@ -91,12 +96,12 @@ export default function StatisticsPage() {
         <>
           {/* ── RANKING GERAL ── */}
           {tab === 'ranking' && (
-            <RankingTable ranking={stats.ranking} showMinNote={true} totalMatches={stats.total_matches} />
+            <RankingTable ranking={stats.ranking} showMinNote={true} totalMatches={stats.total_matches} onOpen={openDetail} />
           )}
 
           {/* ── POR CAMPEONATO ── */}
           {tab === 'porcamp' && (
-            <ChampionshipTab byChampionship={stats.by_championship} filterChamp={filterChamp} />
+            <ChampionshipTab byChampionship={stats.by_championship} filterChamp={filterChamp} onOpen={openDetail} />
           )}
 
           {/* ── BRUNINHO VS SIMÕES ── */}
@@ -110,12 +115,22 @@ export default function StatisticsPage() {
           )}
         </>
       )}
+
+      {detail && (
+        <PlayerGamesModal
+          player={detail.player}
+          column={detail.column}
+          season={stats?.season ?? season}
+          championship={detail.championship}
+          onClose={closeDetail}
+        />
+      )}
     </div>
   );
 }
 
 // ─── Ranking table ────────────────────────────────────────────────────────────
-function RankingTable({ ranking, showMinNote = true, totalMatches }) {
+function RankingTable({ ranking, showMinNote = true, totalMatches, onOpen }) {
   if (!ranking || ranking.length === 0) {
     return <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Nenhuma nota registrada.</div>;
   }
@@ -165,13 +180,13 @@ function RankingTable({ ranking, showMinNote = true, totalMatches }) {
                   </Link>
                 </td>
                 <td style={tdS(cols[2])}><span style={{ fontSize: 11, fontFamily: 'Barlow Condensed', color: 'var(--text-muted)' }}>{player.position}</span></td>
-                <td style={tdS(cols[3], { fontFamily: 'Barlow Condensed', fontWeight: 600 })}>{player.games}</td>
-                <td style={tdS(cols[4])}><span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(player.avg_bruninho) }}>{player.avg_bruninho ? Number(player.avg_bruninho).toFixed(2) : '—'}</span></td>
-                <td style={tdS(cols[5])}><span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(player.avg_simoes) }}>{player.avg_simoes ? Number(player.avg_simoes).toFixed(2) : '—'}</span></td>
+                <td style={tdS(cols[3], { fontFamily: 'Barlow Condensed', fontWeight: 600 })}><NumButton title={`Ver jogos de ${player.name}`} onClick={() => onOpen(player, 'games')}>{player.games}</NumButton></td>
+                <td style={tdS(cols[4])}><NumButton title={`Ver notas do Bruninho para ${player.name}`} onClick={() => onOpen(player, 'bruninho')}><span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(player.avg_bruninho) }}>{player.avg_bruninho ? Number(player.avg_bruninho).toFixed(2) : '—'}</span></NumButton></td>
+                <td style={tdS(cols[5])}><NumButton title={`Ver notas do Simões para ${player.name}`} onClick={() => onOpen(player, 'simoes')}><span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(player.avg_simoes) }}>{player.avg_simoes ? Number(player.avg_simoes).toFixed(2) : '—'}</span></NumButton></td>
                 <td style={tdS(cols[6])}><span style={{ fontFamily: 'Bebas Neue', fontSize: 22, color: getRatingColor(player.avg_overall) }}>{player.avg_overall ? Number(player.avg_overall).toFixed(2) : '—'}</span></td>
-                <td style={tdS(cols[7])}><span style={{ color: 'var(--green)', fontFamily: 'Barlow Condensed', fontWeight: 600 }}>{player.best_game ? Number(player.best_game).toFixed(1) : '—'}</span></td>
-                <td style={tdS(cols[8])}><span style={{ color: 'var(--gold)', fontFamily: 'Barlow Condensed', fontWeight: 700 }}>{player.craque_count || 0}</span></td>
-                <td style={tdS(cols[9])}><span style={{ color: 'var(--red-primary)', fontFamily: 'Barlow Condensed', fontWeight: 700 }}>{player.bagre_count || 0}</span></td>
+                <td style={tdS(cols[7])}><NumButton title={`Ver melhor jogo de ${player.name}`} onClick={() => onOpen(player, 'best')}><span style={{ color: 'var(--green)', fontFamily: 'Barlow Condensed', fontWeight: 600 }}>{player.best_game ? Number(player.best_game).toFixed(1) : '—'}</span></NumButton></td>
+                <td style={tdS(cols[8])}><NumButton title={`Ver jogos em que ${player.name} foi craque`} onClick={() => onOpen(player, 'craque')}><span style={{ color: 'var(--gold)', fontFamily: 'Barlow Condensed', fontWeight: 700 }}>{player.craque_count || 0}</span></NumButton></td>
+                <td style={tdS(cols[9])}><NumButton title={`Ver jogos em que ${player.name} foi bagre`} onClick={() => onOpen(player, 'bagre')}><span style={{ color: 'var(--red-primary)', fontFamily: 'Barlow Condensed', fontWeight: 700 }}>{player.bagre_count || 0}</span></NumButton></td>
               </tr>
             ))}
           </tbody>
@@ -187,7 +202,7 @@ function RankingTable({ ranking, showMinNote = true, totalMatches }) {
 }
 
 // ─── Por campeonato ───────────────────────────────────────────────────────────
-function ChampionshipTab({ byChampionship, filterChamp }) {
+function ChampionshipTab({ byChampionship, filterChamp, onOpen }) {
   const grouped = (byChampionship || []).reduce((acc, row) => {
     if (filterChamp && row.championship !== filterChamp) return acc;
     if (!acc[row.championship]) acc[row.championship] = [];
@@ -268,11 +283,11 @@ function ChampionshipTab({ byChampionship, filterChamp }) {
                       {/* Pos */}
                       <td style={{ padding: '10px 14px' }}><span style={{ fontSize: 11, fontFamily: 'Barlow Condensed', color: 'var(--text-muted)' }}>{p.position}</span></td>
                       {/* Jogos */}
-                      <td style={{ padding: '10px 14px', fontFamily: 'Barlow Condensed', fontWeight: 600 }}>{p.games}</td>
+                      <td style={{ padding: '10px 14px', fontFamily: 'Barlow Condensed', fontWeight: 600 }}><NumButton title={`Ver jogos de ${p.name} no ${champ}`} onClick={() => onOpen(p, 'games', champ)}>{p.games}</NumButton></td>
                       {/* Bruninho */}
-                      <td style={{ padding: '10px 14px' }}><span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(p.avg_bruninho) }}>{p.avg_bruninho ? Number(p.avg_bruninho).toFixed(2) : '—'}</span></td>
+                      <td style={{ padding: '10px 14px' }}><NumButton title={`Ver notas do Bruninho para ${p.name} no ${champ}`} onClick={() => onOpen(p, 'bruninho', champ)}><span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(p.avg_bruninho) }}>{p.avg_bruninho ? Number(p.avg_bruninho).toFixed(2) : '—'}</span></NumButton></td>
                       {/* Simões */}
-                      <td style={{ padding: '10px 14px' }}><span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(p.avg_simoes) }}>{p.avg_simoes ? Number(p.avg_simoes).toFixed(2) : '—'}</span></td>
+                      <td style={{ padding: '10px 14px' }}><NumButton title={`Ver notas do Simões para ${p.name} no ${champ}`} onClick={() => onOpen(p, 'simoes', champ)}><span style={{ fontFamily: 'Barlow Condensed', fontWeight: 600, color: getRatingColor(p.avg_simoes) }}>{p.avg_simoes ? Number(p.avg_simoes).toFixed(2) : '—'}</span></NumButton></td>
                       {/* Média */}
                       <td style={{ padding: '10px 14px' }}><span style={{ fontFamily: 'Bebas Neue', fontSize: 20, color: getRatingColor(p.avg_overall) }}>{p.avg_overall ? Number(p.avg_overall).toFixed(2) : '—'}</span></td>
                     </tr>
@@ -433,6 +448,21 @@ function EvolutionTab({ matchEvolution, season }) {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+// Número clicável da tabela: abre o painel de detalhes sem navegar nem disparar cliques da linha
+function NumButton({ onClick, title, children }) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      className="num-button"
+      onClick={e => { e.preventDefault(); e.stopPropagation(); onClick(); }}
+    >
+      {children}
+    </button>
+  );
+}
+
 function StatHighlight({ icon, label, value, sub, gold }) {
   return (
     <div className="card" style={{ flex: 1, minWidth: 160, textAlign: 'center', borderColor: gold ? 'rgba(245,200,66,0.25)' : 'var(--border)', background: gold ? 'rgba(245,200,66,0.04)' : 'var(--bg-card)' }}>

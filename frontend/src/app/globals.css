@@ -244,3 +244,25 @@ label {
 @media (max-width: 768px) {
   .page-container { padding: 0 16px; }
 }
+
+/* Números clicáveis das tabelas de Estatísticas */
+.num-button {
+  background: none;
+  border: none;
+  border-bottom: 1px dashed rgba(144, 144, 168, 0.4);
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: 4px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.num-button:hover {
+  background: rgba(232, 0, 28, 0.1);
+  border-bottom-color: var(--red-primary);
+}
+.num-button:focus-visible {
+  outline: 2px solid var(--red-primary);
+  outline-offset: 2px;
+}

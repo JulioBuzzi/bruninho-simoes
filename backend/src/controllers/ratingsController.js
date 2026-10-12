@@ -39,10 +39,28 @@ const getPlayerRatings = async (req, res) => {
     const conditions = ['r.player_id = $1'];
     if (season) { params.push(parseInt(season)); conditions.push(`m.season = $${params.length}`); }
     if (championship) { params.push(championship); conditions.push(`m.championship = $${params.length}`); }
+    // Campos extras (só adicionados, nada removido) usados pelo painel de detalhes das Estatísticas:
+    // - match_best_avg / match_worst_avg: maior e menor média do jogo (mesma regra do craque/bagre do ranking)
+    // - is_craque / is_bagre: a média do jogador empatou com a maior / menor média do jogo
+    // - is_starter: o jogador está na escalação titular desse jogo
     const result = await query(`
       SELECT r.*, m.match_date, m.championship, m.season, m.flamengo_goals, m.opponent_goals, m.is_home,
-             t.name AS opponent_name, t.logo_url AS opponent_logo
+             m.round, m.had_penalties, m.flamengo_penalties, m.opponent_penalties,
+             t.name AS opponent_name, t.logo_url AS opponent_logo,
+             mb.best_avg AS match_best_avg,
+             mb.worst_avg AS match_worst_avg,
+             (r.average_rating IS NOT NULL AND r.average_rating = mb.best_avg)  AS is_craque,
+             (r.average_rating IS NOT NULL AND r.average_rating = mb.worst_avg) AS is_bagre,
+             EXISTS (
+               SELECT 1 FROM match_players mp
+               WHERE mp.match_id = r.match_id AND mp.player_id = r.player_id AND mp.is_starter = TRUE
+             ) AS is_starter
       FROM ratings r
+      LEFT JOIN LATERAL (
+        SELECT MAX(r2.average_rating) AS best_avg, MIN(r2.average_rating) AS worst_avg
+        FROM ratings r2
+        WHERE r2.match_id = r.match_id AND r2.average_rating IS NOT NULL
+      ) mb ON TRUE
       JOIN matches m ON m.id = r.match_id
       JOIN teams t ON t.id = m.opponent_id
       WHERE ${conditions.join(' AND ')}
