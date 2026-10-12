@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ratingsApi, matchesApi } from '../../lib/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import PlayerGamesModal from '../../components/PlayerGamesModal';
@@ -353,6 +354,8 @@ function BvsTab({ bvs }) {
 
 // ─── Evolução (gráfico por mês) ───────────────────────────────────────────────
 function MonthChart({ games, monthLabel }) {
+  const router = useRouter();
+  const [hovered, setHovered] = useState(null);
   if (!games || games.length === 0) return null;
   const W = 900, H = 300;
   const PAD = { top: 44, right: 32, bottom: 80, left: 48 };
@@ -376,6 +379,9 @@ function MonthChart({ games, monthLabel }) {
         <span style={{ fontSize: 14, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', marginLeft: 10 }}>
           {games.length} jogo{games.length !== 1 ? 's' : ''}
         </span>
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', letterSpacing: '0.04em', paddingLeft: 8, marginTop: -6, marginBottom: 8 }}>
+        Clique em um jogo para ver as notas
       </div>
       <div style={{ overflowX: 'auto' }}>
         <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', minWidth: Math.max(400, games.length * 80), height: 'auto', display: 'block' }}>
@@ -402,9 +408,35 @@ function MonthChart({ games, monthLabel }) {
             const logoUrl = m.opponent_logo || null;
             const logoSize = 28;
             const logoY = PAD.top + chartH + 32;
+            // Largura da área clicável: metade da distância até os vizinhos
+            const colW = games.length > 1 ? chartW / (games.length - 1) : chartW;
+            const isHover = hovered === i;
+            const goToMatch = () => router.push(`/jogos/${m.match_id}`);
             return (
-              <g key={m.match_id || i}>
-                <circle cx={x} cy={y} r="6" fill={color} stroke="#0a0a0f" strokeWidth="2" />
+              <g
+                key={m.match_id || i}
+                role="link"
+                tabIndex={0}
+                aria-label={`Abrir jogo contra ${m.opponent_name} em ${dateStr}: Flamengo ${m.flamengo_goals} x ${m.opponent_goals}, média ${rating.toFixed(1)}`}
+                style={{ cursor: 'pointer', outline: 'none' }}
+                onClick={goToMatch}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToMatch(); } }}
+                onMouseEnter={() => setHovered(i)}
+                onMouseLeave={() => setHovered(null)}
+                onFocus={() => setHovered(i)}
+                onBlur={() => setHovered(null)}
+              >
+                <title>{`${m.opponent_name} · ${dateStr} · ${m.flamengo_goals}×${m.opponent_goals} — clique para abrir o jogo`}</title>
+                {/* Faixa invisível que recebe o clique; fica visível no hover */}
+                <rect
+                  x={x - Math.min(colW, 90) / 2} y={PAD.top - 30}
+                  width={Math.min(colW, 90)} height={H - PAD.top + 30}
+                  rx="8"
+                  fill={isHover ? 'rgba(232,0,28,0.08)' : 'transparent'}
+                  stroke={isHover ? 'rgba(232,0,28,0.35)' : 'none'}
+                />
+                {isHover && <line x1={x} y1={y + 8} x2={x} y2={PAD.top + chartH} stroke={color} strokeOpacity="0.4" strokeDasharray="3 3" />}
+                <circle cx={x} cy={y} r={isHover ? 8 : 6} fill={color} stroke="#0a0a0f" strokeWidth="2" />
                 <text x={x} y={y - 14} textAnchor="middle" fill={color} fontFamily="Bebas Neue" fontSize="15" letterSpacing="0.03em">{rating.toFixed(1)}</text>
                 <text x={x} y={PAD.top + chartH + 18} textAnchor="middle" fill="#9090a8" fontFamily="Barlow Condensed" fontSize="12" fontWeight="600">{dateStr}</text>
                 {logoUrl
