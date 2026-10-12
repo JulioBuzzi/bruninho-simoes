@@ -157,8 +157,8 @@ function RankingTable({ ranking, showMinNote = true, totalMatches, onOpen }) {
         <StatHighlight icon="🐟" label="Bagre da Temporada" value={ranking[ranking.length - 1]?.name} sub={ranking[ranking.length - 1]?.avg_overall ? `Média ${Number(ranking[ranking.length - 1].avg_overall).toFixed(2)}` : ''} />
         <StatHighlight icon="⚽" label="Jogos Avaliados" value={totalMatches != null ? `${totalMatches} jogo${totalMatches !== 1 ? 's' : ''}` : '—'} />
       </div>
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+      <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
+        <table style={{ width: '100%', minWidth: 940, borderCollapse: 'collapse', tableLayout: 'fixed' }}>
           <thead>
             <tr style={{ background: 'var(--bg-secondary)' }}>
               {cols.map(c => <th key={c.key} style={thS(c)}>{c.label}</th>)}
@@ -243,8 +243,8 @@ function ChampionshipTab({ byChampionship, filterChamp, onOpen }) {
             </div>
 
             {/* Table */}
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+            <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
+              <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                 <thead>
                   <tr style={{ background: 'var(--bg-secondary)' }}>
                     {[

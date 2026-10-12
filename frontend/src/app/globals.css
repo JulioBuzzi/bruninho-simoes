@@ -247,22 +247,40 @@ label {
 
 /* Números clicáveis das tabelas de Estatísticas */
 .num-button {
-  background: none;
-  border: none;
-  border-bottom: 1px dashed rgba(144, 144, 168, 0.4);
-  padding: 2px 4px;
-  margin: -2px -4px;
-  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 3px 8px;
+  margin: -4px -9px;
+  border-radius: 8px;
   color: inherit;
   font: inherit;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
 }
+/* Ao passar o mouse na linha, os números ganham um fundo leve (mostra que são clicáveis) */
+tr:hover .num-button {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border);
+}
+/* No número em si, destaque vermelho */
 .num-button:hover {
-  background: rgba(232, 0, 28, 0.1);
-  border-bottom-color: var(--red-primary);
+  background: rgba(232, 0, 28, 0.12) !important;
+  border-color: rgba(232, 0, 28, 0.45) !important;
+  transform: translateY(-1px);
 }
+.num-button:active { transform: translateY(0); }
 .num-button:focus-visible {
   outline: 2px solid var(--red-primary);
   outline-offset: 2px;
+}
+/* Celular (sem hover): fundo sempre visível pra indicar que dá pra tocar */
+@media (hover: none) {
+  .num-button {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--border);
+  }
 }
