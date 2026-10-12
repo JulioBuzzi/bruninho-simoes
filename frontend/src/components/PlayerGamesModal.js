@@ -52,6 +52,9 @@ export default function PlayerGamesModal({ player, column, season, championship,
   }, [onClose]);
 
   const games = rows ? filterGames(rows, column, !championship) : [];
+  // Backend antigo (sem os campos is_craque/is_bagre/is_starter): não dá pra saber craque/bagre/escalação
+  const backendOutdated = !!rows && rows.length > 0 && !('is_craque' in rows[0]);
+  const needsNewFields  = column === 'craque' || column === 'bagre';
 
   // Valor principal mostrado em cada linha, conforme a coluna clicada
   const mainValue = r =>
@@ -65,7 +68,7 @@ export default function PlayerGamesModal({ player, column, season, championship,
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 200,
-        background: 'rgba(5,5,10,0.75)', backdropFilter: 'blur(4px)',
+        background: 'rgba(5,5,10,0.82)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
       }}
     >
@@ -74,9 +77,10 @@ export default function PlayerGamesModal({ player, column, season, championship,
         aria-modal="true"
         aria-labelledby="player-games-title"
         onClick={e => e.stopPropagation()}
-        className="card fade-in"
+        className="fade-in"
         style={{
-          width: '100%', maxWidth: 620, maxHeight: '85vh', padding: 0,
+          width: '100%', maxWidth: 620, maxHeight: '85vh',
+          background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}
       >
@@ -92,7 +96,7 @@ export default function PlayerGamesModal({ player, column, season, championship,
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
               <span className="badge badge-gray">Temporada {season}</span>
               <span className="badge badge-gray">{championship || 'Todos os campeonatos'}</span>
-              {rows && <span className="badge badge-gray">{games.length} jogo{games.length !== 1 ? 's' : ''}</span>}
+              {rows && !(backendOutdated && needsNewFields) && <span className="badge badge-gray">{games.length} jogo{games.length !== 1 ? 's' : ''}</span>}
             </div>
           </div>
           <button
@@ -108,11 +112,18 @@ export default function PlayerGamesModal({ player, column, season, championship,
         </div>
 
         {/* Conteúdo */}
-        <div style={{ overflowY: 'auto', padding: '12px 16px 16px' }}>
+        <div style={{
+          flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px 16px 16px',
+          overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch',
+        }}>
           {error ? (
             <p style={{ textAlign: 'center', padding: '32px 8px', color: 'var(--text-muted)' }}>Não foi possível carregar os jogos. Tente novamente.</p>
           ) : !rows ? (
             <LoadingSpinner text="Carregando jogos..." />
+          ) : backendOutdated && needsNewFields ? (
+            <p style={{ textAlign: 'center', padding: '32px 8px', color: 'var(--text-muted)' }}>
+              O servidor ainda está na versão antiga e não informa craque/bagre por jogo. Atualize o backend e tente de novo.
+            </p>
           ) : games.length === 0 ? (
             <p style={{ textAlign: 'center', padding: '32px 8px', color: 'var(--text-muted)' }}>{info?.empty}</p>
           ) : (
@@ -159,9 +170,13 @@ function GameRow({ r, value, label, column }) {
           <span>{r.championship}{r.round ? ` · ${r.round}` : ''}</span>
           <span>•</span>
           <span>{r.is_home ? 'Casa' : 'Fora'}</span>
-          {!r.is_starter && <span className="badge badge-red" style={{ fontSize: 10 }}>Fora da escalação salva</span>}
-          {column !== 'craque' && r.is_craque && <span className="badge badge-gold" style={{ fontSize: 10 }}>⭐ Craque</span>}
-          {column !== 'bagre' && r.is_bagre && !r.is_craque && <span className="badge badge-red" style={{ fontSize: 10 }}>🐟 Bagre</span>}
+          {r.is_starter === false && (
+            <span className="badge badge-red" style={{ fontSize: 10 }} title="Tem nota salva neste jogo, mas não está na lista de titulares do jogo">
+              Não está na escalação
+            </span>
+          )}
+          {column !== 'craque' && r.is_craque === true && <span className="badge badge-gold" style={{ fontSize: 10 }}>⭐ Craque</span>}
+          {column !== 'bagre' && r.is_bagre === true && r.is_craque !== true && <span className="badge badge-red" style={{ fontSize: 10 }}>🐟 Bagre</span>}
         </div>
         <Link href={`/jogos/${r.match_id}`} style={{ display: 'inline-block', marginTop: 4, fontSize: 12, color: 'var(--red-primary)', fontFamily: 'Barlow Condensed', fontWeight: 600, letterSpacing: '0.04em' }}>
           Ver jogo →
