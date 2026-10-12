@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware, adminOnly, raterOnly } = require('../middleware/auth');
 
-const { login, me, refresh } = require('../controllers/authController');
+const { login, me, refresh, logout } = require('../controllers/authController');
 const { getMatches, getMatchById, createMatch, updateMatch, deleteMatch, getSeasons, getChampionships, updateMatchGoalsAssists } = require('../controllers/matchesController');
 const { saveRatings, getPlayerRatings, getStats } = require('../controllers/ratingsController');
 const { getPlayers, getPlayerById, createPlayer, updatePlayer } = require('../controllers/playersController');
@@ -11,7 +11,8 @@ const { getTeams, createTeam, updateTeam } = require('../controllers/teamsContro
 // ── AUTH ──
 router.post('/auth/login', login);
 router.get('/auth/me', authMiddleware, me);
-router.post('/auth/refresh', authMiddleware, refresh); // ← novo: renova token
+router.post('/auth/refresh', refresh);
+router.post('/auth/logout', logout);
 
 // ── MATCHES (leitura pública) ──
 router.get('/matches', getMatches);

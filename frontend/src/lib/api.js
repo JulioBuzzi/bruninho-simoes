@@ -5,7 +5,33 @@ const api = axios.create({
   timeout: 15000,
 });
 
-// ── Attach token to every request ──
+const saveSession = (data) => {
+  localStorage.setItem('bs_token', data.token);
+  if (data.refreshToken) localStorage.setItem('bs_refresh_token', data.refreshToken);
+  localStorage.setItem('bs_user', JSON.stringify(data.user));
+};
+
+const clearSession = () => {
+  localStorage.removeItem('bs_token');
+  localStorage.removeItem('bs_refresh_token');
+  localStorage.removeItem('bs_user');
+};
+
+const refreshSession = async () => {
+  const refreshToken = localStorage.getItem('bs_refresh_token');
+  const accessToken = localStorage.getItem('bs_token');
+  const headers = !refreshToken && accessToken
+    ? { Authorization: `Bearer ${accessToken}` }
+    : {};
+  const response = await axios.post(
+    `${api.defaults.baseURL}/auth/refresh`,
+    refreshToken ? { refreshToken } : {},
+    { headers, timeout: api.defaults.timeout }
+  );
+  saveSession(response.data);
+  return response.data;
+};
+
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('bs_token');
@@ -14,12 +40,11 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ── Auto-refresh + redirect on 401 ──
 let isRefreshing = false;
-let failedQueue = []; // requests waiting for refresh
+let failedQueue = [];
 
 const processQueue = (error, token = null) => {
-  failedQueue.forEach(p => error ? p.reject(error) : p.resolve(token));
+  failedQueue.forEach((request) => error ? request.reject(error) : request.resolve(token));
   failedQueue = [];
 };
 
@@ -27,57 +52,54 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const isAuthRequest = originalRequest?.url?.includes('/auth/');
 
-    // Only try refresh on 401 and if we haven't already retried
-    if (error.response?.status === 401 && !originalRequest._retry && typeof window !== 'undefined') {
-      const token = localStorage.getItem('bs_token');
-
-      // No token at all → go to login
-      if (!token) {
-        window.location.href = '/admin/login';
-        return Promise.reject(error);
-      }
-
-      if (isRefreshing) {
-        // Queue this request until refresh completes
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        }).then(newToken => {
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          return api(originalRequest);
-        }).catch(err => Promise.reject(err));
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        // Try to get a fresh token
-        const res = await api.post('/auth/refresh');
-        const newToken = res.data.token;
-        localStorage.setItem('bs_token', newToken);
-        localStorage.setItem('bs_user', JSON.stringify(res.data.user));
-        api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
-        processQueue(null, newToken);
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return api(originalRequest); // retry original request
-      } catch (refreshError) {
-        // Refresh failed → token truly expired, force login
-        processQueue(refreshError, null);
-        localStorage.removeItem('bs_token');
-        localStorage.removeItem('bs_user');
-        window.location.href = '/admin/login';
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
+    if (
+      error.response?.status !== 401 ||
+      isAuthRequest ||
+      originalRequest?._retry ||
+      typeof window === 'undefined'
+    ) {
+      return Promise.reject(error);
     }
 
-    return Promise.reject(error);
+    const hasSession = localStorage.getItem('bs_token') || localStorage.getItem('bs_refresh_token');
+    if (!hasSession) {
+      window.location.href = '/admin/login';
+      return Promise.reject(error);
+    }
+
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({ resolve, reject });
+      }).then((newToken) => {
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return api(originalRequest);
+      });
+    }
+
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    try {
+      const data = await refreshSession();
+      api.defaults.headers.common.Authorization = `Bearer ${data.token}`;
+      processQueue(null, data.token);
+      originalRequest.headers.Authorization = `Bearer ${data.token}`;
+      return api(originalRequest);
+    } catch (refreshError) {
+      processQueue(refreshError, null);
+      if (refreshError.response?.status === 401 || refreshError.response?.status === 403) {
+        clearSession();
+        window.location.href = '/admin/login';
+      }
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
   }
 );
 
-// ── MATCHES ──
 export const matchesApi = {
   getAll: (params) => api.get('/matches', { params }).then(r => r.data),
   getById: (id) => api.get(`/matches/${id}`).then(r => r.data),
@@ -89,7 +111,6 @@ export const matchesApi = {
   getChampionships: () => api.get('/matches/championships').then(r => r.data),
 };
 
-// ── PLAYERS ──
 export const playersApi = {
   getAll: (params) => api.get('/players', { params }).then(r => r.data),
   getById: (id, params) => api.get(`/players/${id}`, { params }).then(r => r.data),
@@ -97,25 +118,39 @@ export const playersApi = {
   update: (id, data) => api.put(`/players/${id}`, data).then(r => r.data),
 };
 
-// ── TEAMS ──
 export const teamsApi = {
   getAll: () => api.get('/teams').then(r => r.data),
   create: (data) => api.post('/teams', data).then(r => r.data),
   update: (id, data) => api.put(`/teams/${id}`, data).then(r => r.data),
 };
 
-// ── RATINGS ──
 export const ratingsApi = {
   save: (data) => api.post('/ratings', data).then(r => r.data),
   getStats: (params) => api.get('/ratings/stats', { params }).then(r => r.data),
   getPlayerHistory: (playerId, params) => api.get(`/ratings/player/${playerId}`, { params }).then(r => r.data),
 };
 
-// ── AUTH ──
 export const authApi = {
-  login: (credentials) => api.post('/auth/login', credentials).then(r => r.data),
+  login: (credentials) => api.post('/auth/login', credentials).then((r) => {
+    saveSession(r.data);
+    return r.data;
+  }),
   me: () => api.get('/auth/me').then(r => r.data),
-  refresh: () => api.post('/auth/refresh').then(r => r.data),
+  refresh: refreshSession,
+  logout: async () => {
+    const refreshToken = localStorage.getItem('bs_refresh_token');
+    try {
+      if (refreshToken) {
+        await axios.post(
+          `${api.defaults.baseURL}/auth/logout`,
+          { refreshToken },
+          { timeout: api.defaults.timeout }
+        );
+      }
+    } finally {
+      clearSession();
+    }
+  },
 };
 
 export default api;

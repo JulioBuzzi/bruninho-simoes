@@ -16,6 +16,13 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Sessões persistentes: revogadas ao sair da conta.
+CREATE TABLE IF NOT EXISTS auth_sessions (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 -- ============================================================
 -- TABELA: teams (times adversários)
 -- ============================================================

@@ -9,6 +9,7 @@ const authMiddleware = (req, res, next) => {
   const token = authHeader.substring(7);
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.type === 'refresh') return res.status(401).json({ error: 'Token de acesso inválido' });
     req.user = decoded;
     next();
   } catch (error) {

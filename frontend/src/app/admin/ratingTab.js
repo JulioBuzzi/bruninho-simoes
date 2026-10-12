@@ -252,10 +252,11 @@ export default function RatingsTab({ matches, players, currentUser, onRefresh })
               </table>
             </div>
           )}
+
           {/* Progress bar */}
           {totalPlayers > 0 && (
             <div style={{ marginBottom: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, marginTop: 6 }}>
                 <span style={{ fontSize: 12, fontFamily: 'Barlow Condensed', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
                   {filledCount}/{totalPlayers} jogadores com as duas notas preenchidas
                   {filledCount > 0 && filledCount < totalPlayers && (

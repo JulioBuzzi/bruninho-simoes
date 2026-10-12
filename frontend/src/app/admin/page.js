@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { matchesApi, playersApi, teamsApi } from '../../lib/api';
+import { authApi, matchesApi, playersApi, teamsApi } from '../../lib/api';
 import RatingsTab from './ratingTab';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -30,13 +30,45 @@ export default function AdminPage() {
   const [tab, setTab]           = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('bs_token');
-    const u     = localStorage.getItem('bs_user');
-    if (!token || !u) { router.push('/admin/login'); return; }
-    const parsed = JSON.parse(u);
-    setUser(parsed);
-    setTab(parsed.role === 'admin' ? 'matches' : 'ratings');
-    setChecking(false);
+    const restoreSession = async () => {
+      let token = localStorage.getItem('bs_token');
+      let storedUser = localStorage.getItem('bs_user');
+
+      if (!token && localStorage.getItem('bs_refresh_token')) {
+        try {
+          const session = await authApi.refresh();
+          token = session.token;
+          storedUser = JSON.stringify(session.user);
+        } catch {
+          router.push('/admin/login');
+          return;
+        }
+      } else if (token && !localStorage.getItem('bs_refresh_token')) {
+        try {
+          const session = await authApi.refresh();
+          storedUser = JSON.stringify(session.user);
+        } catch {
+          // Existing sessions are upgraded when their current access token is still valid.
+        }
+      }
+
+      if (!token || !storedUser) {
+        router.push('/admin/login');
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(storedUser);
+        setUser(parsed);
+        setTab(parsed.role === 'admin' ? 'matches' : 'ratings');
+        setChecking(false);
+      } catch {
+        localStorage.removeItem('bs_user');
+        router.push('/admin/login');
+      }
+    };
+
+    restoreSession();
   }, []);
 
   const fetchData = useCallback(async () => {
@@ -50,7 +82,15 @@ export default function AdminPage() {
 
   useEffect(() => { if (!checking) fetchData(); }, [checking, fetchData]);
 
-  const handleLogout = () => { localStorage.removeItem('bs_token'); localStorage.removeItem('bs_user'); router.push('/admin/login'); };
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      toast.error('Não foi possível confirmar o encerramento da sessão');
+    } finally {
+      router.push('/admin/login');
+    }
+  };
 
   if (checking) return <div className="page-container" style={{ paddingTop: 40 }}><LoadingSpinner /></div>;
 
