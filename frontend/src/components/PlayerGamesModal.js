@@ -170,11 +170,7 @@ function GameRow({ r, value, label, column }) {
           <span>{r.championship}{r.round ? ` · ${r.round}` : ''}</span>
           <span>•</span>
           <span>{r.is_home ? 'Casa' : 'Fora'}</span>
-          {r.is_starter === false && (
-            <span className="badge badge-red" style={{ fontSize: 10 }} title="Tem nota salva neste jogo, mas não está na lista de titulares do jogo">
-              Não está na escalação
-            </span>
-          )}
+          
           {column !== 'craque' && r.is_craque === true && <span className="badge badge-gold" style={{ fontSize: 10 }}>⭐ Craque</span>}
           {column !== 'bagre' && r.is_bagre === true && r.is_craque !== true && <span className="badge badge-red" style={{ fontSize: 10 }}>🐟 Bagre</span>}
         </div>
