@@ -15,8 +15,13 @@ export default function RatingLineChart({ games, title, subtitle = 'Clique no es
     if (scrollToEnd && scrollRef.current) scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
   }, [scrollToEnd, games]);
   if (!games || games.length === 0) return null;
-  const W = 900, H = 300;
+  const H = 300;
   const PAD = { top: 44, right: 32, bottom: 80, left: 48 };
+  // Largura cresce com o número de jogos (espaço fixo entre eles), em vez de esticar tudo.
+  // Assim, com muitos jogos, escudos e datas ficam no tamanho normal e o gráfico rola pro lado.
+  const STEP = 76; // px entre um jogo e outro
+  const W = Math.max(900, PAD.left + PAD.right + (games.length - 1) * STEP);
+  const wide = W > 900;
   const chartW = W - PAD.left - PAD.right;
   const chartH = H - PAD.top - PAD.bottom;
   const ratings = games.map(m => parseFloat(m.avg_rating));
@@ -40,9 +45,10 @@ export default function RatingLineChart({ games, title, subtitle = 'Clique no es
       </div>
       <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', letterSpacing: '0.04em', paddingLeft: 8, marginTop: -6, marginBottom: 8 }}>
         {subtitle}
+        {wide && <span style={{ color: 'var(--text-secondary)' }}> · ← arraste para ver os jogos anteriores</span>}
       </div>
       <div ref={scrollRef} style={{ overflowX: 'auto' }}>
-        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', minWidth: Math.max(400, games.length * 80), height: 'auto', display: 'block' }}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: wide ? W : '100%', minWidth: wide ? W : Math.max(400, games.length * 80), height: wide ? H : 'auto', display: 'block' }}>
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#e8001c" stopOpacity="0.3" />
