@@ -1,11 +1,11 @@
 // Gera a imagem (PNG 1080x1920, formato padrão de Story do Instagram, 9:16) com as notas de um jogo.
-// O Instagram cobre ~250px no topo (nome/barra) e ~250px embaixo (campo de resposta): deixamos essas faixas livres.
+// O Instagram cobre o topo (nome/barra) e a parte de baixo (campo de resposta): deixamos 150px livres em cada ponta.
 // Tudo é desenhado num <canvas>, sem bibliotecas extras.
 
 const W = 1080;
 const H = 1920;
-const SAFE_TOP = 250;    // área livre no topo do story
-const SAFE_BOTTOM = 250; // área livre embaixo do story
+const SAFE_TOP = 150;    // área livre no topo do story (barra de progresso e nome do perfil)
+const SAFE_BOTTOM = 150; // área livre embaixo do story (campo de resposta)
 
 const C = {
   bg: '#0a0a0f',
@@ -79,16 +79,17 @@ function fitText(ctx, text, maxW) {
 }
 
 function pill(ctx, x, y, w, h, value, { big = false } = {}) {
+  const fontSize = Math.round(Math.min(big ? 44 : 38, h * (big ? 0.78 : 0.68)));
   const n = parseFloat(value);
   const color = ratingColor(value);
-  roundRect(ctx, x, y, w, h, 10);
+  roundRect(ctx, x, y, w, h, 12);
   ctx.fillStyle = isNaN(n) ? 'rgba(90,90,114,0.12)' : hexA(color, big ? 0.16 : 0.1);
   ctx.fill();
   ctx.lineWidth = 2;
   ctx.strokeStyle = isNaN(n) ? C.border : hexA(color, 0.35);
   ctx.stroke();
   ctx.fillStyle = color;
-  ctx.font = `${big ? 36 : 30}px "Bebas Neue"`;
+  ctx.font = `${fontSize}px "Bebas Neue"`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(isNaN(n) ? '—' : n.toFixed(1), x + w / 2, y + h / 2 + 2);
@@ -165,77 +166,89 @@ export async function generateMatchCard(data) {
 
   // ── Cabeçalho centralizado (grande): marca em cima, campeonato/data embaixo ──
   ctx.textBaseline = 'alphabetic';
-  ctx.font = '76px "Bebas Neue"';
   const part1 = 'BRUNINHO ', part2 = '&', part3 = ' SIMÕES';
+  const brandSize = 122;
+  const logoW = brand ? brandSize + 24 : 0;
+  // Diminui a fonte até a marca caber na largura (nunca encosta nas bordas)
+  let brandFont = 90;
+  ctx.font = `${brandFont}px "Bebas Neue"`;
+  while (brandFont > 50 && logoW + ctx.measureText(part1 + part2 + part3).width > W - PAD * 2) {
+    brandFont -= 2;
+    ctx.font = `${brandFont}px "Bebas Neue"`;
+  }
   const textW = ctx.measureText(part1 + part2 + part3).width;
-  const brandSize = 104;
-  const logoW = brand ? brandSize + 22 : 0;
   let hx = (W - (logoW + textW)) / 2;
-  if (brand) drawCover(ctx, brand, hx, T, brandSize, 22);
+  if (brand) drawCover(ctx, brand, hx, T, brandSize, 26);
   hx += logoW;
   ctx.textAlign = 'left';
   ctx.fillStyle = C.text;
-  ctx.fillText(part1, hx, T + 68);
+  ctx.fillText(part1, hx, T + 82);
   ctx.fillStyle = C.red;
-  ctx.fillText(part2, hx + ctx.measureText(part1).width, T + 68);
+  ctx.fillText(part2, hx + ctx.measureText(part1).width, T + 82);
   ctx.fillStyle = C.text;
-  ctx.fillText(part3, hx + ctx.measureText(part1 + part2).width, T + 68);
-  ctx.font = '700 24px "Barlow Condensed"';
+  ctx.fillText(part3, hx + ctx.measureText(part1 + part2).width, T + 82);
+  ctx.font = '700 28px "Barlow Condensed"';
   ctx.fillStyle = C.muted;
-  ctx.fillText('NOTAS DO TENGO', hx + 2, T + 100);
+  ctx.fillText('NOTAS DO TENGO', hx + 2, T + 116);
 
   ctx.textAlign = 'center';
-  ctx.font = '700 36px "Barlow Condensed"';
   ctx.fillStyle = C.text2;
   const champLine = `${(match.championship || '').toUpperCase()}${match.round ? ' · ' + match.round.toUpperCase() : ''}`;
-  ctx.fillText(fitText(ctx, `${champLine}   •   ${formatDate(match.match_date)} · ${match.is_home ? 'CASA' : 'FORA'}`, W - PAD * 2), W / 2, T + 168);
+  const infoLine = `${champLine}   •   ${formatDate(match.match_date)} · ${match.is_home ? 'CASA' : 'FORA'}`;
+  let infoFont = 42;
+  ctx.font = `700 ${infoFont}px "Barlow Condensed"`;
+  while (infoFont > 24 && ctx.measureText(infoLine).width > W - PAD * 2) {
+    infoFont -= 1;
+    ctx.font = `700 ${infoFont}px "Barlow Condensed"`;
+  }
+  ctx.fillText(fitText(ctx, infoLine, W - PAD * 2), W / 2, T + 196);
 
   // ── Placar ──
   const fla = match.flamengo_goals, opp = match.opponent_goals;
   const resColor = fla > opp ? C.green : fla < opp ? C.red : C.gold;
-  const scoreY = T + 205;
-  const logoSize = 150;
+  const scoreY = T + 228;
+  const logoSize = 152;
   const drawTeam = (img, name, short, cx) => {
-    roundRect(ctx, cx - logoSize / 2 - 14, scoreY, logoSize + 28, logoSize + 28, 24);
+    roundRect(ctx, cx - logoSize / 2 - 16, scoreY, logoSize + 32, logoSize + 32, 28);
     ctx.fillStyle = C.card;
     ctx.fill();
     ctx.lineWidth = 2;
     ctx.strokeStyle = C.border;
     ctx.stroke();
-    if (img) drawContain(ctx, img, cx - logoSize / 2, scoreY + 14, logoSize);
+    if (img) drawContain(ctx, img, cx - logoSize / 2, scoreY + 16, logoSize);
     else {
-      ctx.font = '48px "Bebas Neue"';
+      ctx.font = '56px "Bebas Neue"';
       ctx.fillStyle = C.text2;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(short, cx, scoreY + 14 + logoSize / 2);
+      ctx.fillText(short, cx, scoreY + 16 + logoSize / 2);
     }
-    ctx.font = '36px "Bebas Neue"';
+    ctx.font = '44px "Bebas Neue"';
     ctx.fillStyle = C.text;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
-    ctx.fillText(fitText(ctx, name.toUpperCase(), 280), cx, scoreY + logoSize + 76);
+    ctx.fillText(fitText(ctx, name.toUpperCase(), 300), cx, scoreY + logoSize + 82);
   };
-  drawTeam(flaLogo, 'Flamengo', 'FLA', 250);
-  drawTeam(oppLogo, match.opponent_name || '', (match.opponent_short || match.opponent_name || '?').slice(0, 3).toUpperCase(), W - 250);
+  drawTeam(flaLogo, 'Flamengo', 'FLA', 240);
+  drawTeam(oppLogo, match.opponent_name || '', (match.opponent_short || match.opponent_name || '?').slice(0, 3).toUpperCase(), W - 240);
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  ctx.font = '180px "Bebas Neue"';
+  ctx.font = '200px "Bebas Neue"';
   ctx.fillStyle = resColor;
-  ctx.fillText(`${fla}`, W / 2 - 84, scoreY + 160);
-  ctx.fillText(`${opp}`, W / 2 + 84, scoreY + 160);
-  ctx.font = '80px "Bebas Neue"';
+  ctx.fillText(`${fla}`, W / 2 - 90, scoreY + 170);
+  ctx.fillText(`${opp}`, W / 2 + 90, scoreY + 170);
+  ctx.font = '96px "Bebas Neue"';
   ctx.fillStyle = C.muted;
-  ctx.fillText('×', W / 2, scoreY + 140);
+  ctx.fillText('×', W / 2, scoreY + 150);
   if (match.had_penalties) {
-    ctx.font = '700 26px "Barlow Condensed"';
+    ctx.font = '700 32px "Barlow Condensed"';
     ctx.fillStyle = C.text2;
-    ctx.fillText(`PÊNALTIS ${match.flamengo_penalties} × ${match.opponent_penalties}`, W / 2, scoreY + 216);
+    ctx.fillText(`PÊNALTIS ${match.flamengo_penalties} × ${match.opponent_penalties}`, W / 2, scoreY + 228);
   }
 
   // ── Destaques: craque, média, Simões, Bruninho ──
-  const hlY = T + 465, hlH = 120, gap = 16;
+  const hlY = T + 496, hlH = 134, gap = 18;
   const hlW = (W - PAD * 2 - gap * 3) / 4;
   const boxes = [
     { label: craqueNames.length > 1 ? 'CRAQUES' : 'CRAQUE', value: craqueNames.length ? craqueNames.join(', ') : '—', sub: best !== null ? best.toFixed(1) : '', color: C.gold, small: true },
@@ -245,7 +258,7 @@ export async function generateMatchCard(data) {
   ];
   boxes.forEach((b, i) => {
     const x = PAD + i * (hlW + gap);
-    roundRect(ctx, x, hlY, hlW, hlH, 16);
+    roundRect(ctx, x, hlY, hlW, hlH, 20);
     ctx.fillStyle = i === 0 ? 'rgba(245,200,66,0.08)' : C.card;
     ctx.fill();
     ctx.lineWidth = 2;
@@ -253,54 +266,58 @@ export async function generateMatchCard(data) {
     ctx.stroke();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
-    ctx.font = '700 18px "Barlow Condensed"';
+    ctx.font = '700 23px "Barlow Condensed"';
     ctx.fillStyle = i === 0 ? C.gold : C.text2;
     // Com mais de um craque, a nota vai junto do título pra sobrar espaço pros nomes
     const multi = b.small && craqueNames.length > 1;
-    ctx.fillText(multi ? `${b.label} · ${b.sub}` : b.label, x + hlW / 2, hlY + 32);
+    ctx.fillText(multi ? `${b.label} · ${b.sub}` : b.label, x + hlW / 2, hlY + 36);
     if (b.small) {
       // Nome(s) do craque: diminui a fonte até caber; com empate, um nome por linha (até 2 linhas)
       const names = craqueNames.length ? craqueNames.map(n => n.toUpperCase()) : ['—'];
       const lines = names.length <= 2 ? names : [names[0], `+${names.length - 1} JOGADORES`];
       const maxW = hlW - 20;
-      let size = lines.length > 1 ? 24 : 30;
+      let size = lines.length > 1 ? 32 : 40;
       const widest = () => Math.max(...lines.map(l => { ctx.font = `${size}px "Bebas Neue"`; return ctx.measureText(l).width; }));
       while (size > 16 && widest() > maxW) size -= 1;
       ctx.font = `${size}px "Bebas Neue"`;
       ctx.fillStyle = C.text;
       const lineH = size + 4;
-      const firstY = lines.length > 1 ? hlY + 66 : hlY + 70;
+      const firstY = lines.length > 1 ? hlY + 76 : hlY + 82;
       lines.forEach((l, li) => ctx.fillText(fitText(ctx, l, maxW), x + hlW / 2, firstY + li * lineH));
       if (!multi) {
-        ctx.font = '24px "Bebas Neue"';
+        ctx.font = '32px "Bebas Neue"';
         ctx.fillStyle = C.gold;
-        ctx.fillText(b.sub, x + hlW / 2, hlY + 100);
+        ctx.fillText(b.sub, x + hlW / 2, hlY + 116);
       }
     } else {
-      ctx.font = '50px "Bebas Neue"';
+      ctx.font = '62px "Bebas Neue"';
       ctx.fillStyle = b.color;
-      ctx.fillText(b.value, x + hlW / 2, hlY + 92);
+      ctx.fillText(b.value, x + hlW / 2, hlY + 106);
     }
   });
 
   // ── Tabela de notas ──
-  const tableTop = hlY + hlH + 54;
-  const footerTop = H - SAFE_BOTTOM - 90;
-  const colS = W - PAD - 330, colB = W - PAD - 210, colM = W - PAD - 96;
-  ctx.font = '700 18px "Barlow Condensed"';
+  const tableTop = hlY + hlH + 50;
+  const footerTop = H - SAFE_BOTTOM - 98;
+  const pillW = 118, colGap = 14;
+  const colM = W - PAD - pillW - 8, colB = colM - pillW - colGap, colS = colB - pillW - colGap;
+  ctx.font = '700 23px "Barlow Condensed"';
   ctx.fillStyle = C.muted;
   ctx.textAlign = 'left';
-  ctx.fillText('JOGADOR', PAD + 12, tableTop);
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('JOGADOR', PAD + 14, tableTop);
   ctx.textAlign = 'center';
-  ctx.fillText('SIMÕES', colS + 48, tableTop);
-  ctx.fillText('BRUNINHO', colB + 48, tableTop);
-  ctx.fillText('MÉDIA', colM + 48, tableTop);
+  ctx.fillText('SIMÕES', colS + pillW / 2, tableTop);
+  ctx.fillText('BRUNINHO', colB + pillW / 2, tableTop);
+  ctx.fillText('MÉDIA', colM + pillW / 2, tableTop);
 
-  const listTop = tableTop + 16;
+  const listTop = tableTop + 18;
   const rowGap = 6;
-  const rowH = Math.min(76, Math.floor((footerTop - 14 - listTop) / Math.max(players.length, 1)) - rowGap);
+  const rowH = Math.min(96, Math.floor((footerTop - 18 - listTop) / Math.max(players.length, 1)) - rowGap);
   const photoSize = rowH - 14;
-  const pillH = rowH - 16;
+  const pillH = Math.round(rowH * 0.72);
+  const nameFont = Math.round(Math.min(38, rowH * 0.5));
+  const posFont = Math.round(Math.min(22, rowH * 0.29));
 
   players.forEach((p, i) => {
     const y = listTop + i * (rowH + rowGap);
@@ -308,18 +325,18 @@ export async function generateMatchCard(data) {
     const isCraque = avg !== null && avg === best;
     const isBagre  = avg !== null && avg === worst && !isCraque;
 
-    roundRect(ctx, PAD, y, W - PAD * 2, rowH, 12);
-    ctx.fillStyle = isCraque ? 'rgba(245,200,66,0.07)' : isBagre ? 'rgba(232,0,28,0.07)' : C.card;
+    roundRect(ctx, PAD, y, W - PAD * 2, rowH, 14);
+    ctx.fillStyle = isCraque ? 'rgba(245,200,66,0.08)' : isBagre ? 'rgba(232,0,28,0.08)' : C.card;
     ctx.fill();
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = isCraque ? 'rgba(245,200,66,0.35)' : isBagre ? 'rgba(232,0,28,0.35)' : C.border;
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = isCraque ? 'rgba(245,200,66,0.4)' : isBagre ? 'rgba(232,0,28,0.4)' : C.border;
     ctx.stroke();
 
     // Foto ou número
-    const px = PAD + 10, py = y + 7;
-    if (photos[i]) drawCover(ctx, photos[i], px, py, photoSize, 10);
+    const px = PAD + 8, py = y + 7;
+    if (photos[i]) drawCover(ctx, photos[i], px, py, photoSize, 12);
     else {
-      roundRect(ctx, px, py, photoSize, photoSize, 10);
+      roundRect(ctx, px, py, photoSize, photoSize, 12);
       ctx.fillStyle = C.card2;
       ctx.fill();
       ctx.font = `${Math.round(photoSize * 0.45)}px "Bebas Neue"`;
@@ -330,50 +347,55 @@ export async function generateMatchCard(data) {
     }
 
     // Nome + posição + selo
-    const nx = px + photoSize + 16;
+    const nx = px + photoSize + 18;
+    const nameY = y + rowH * 0.5 + nameFont * 0.12;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    ctx.font = `600 ${rowH >= 56 ? 28 : 24}px "Barlow"`;
+    ctx.font = `600 ${nameFont}px "Barlow"`;
     ctx.fillStyle = C.text;
     const tag = isCraque ? 'CRAQUE' : isBagre ? 'BAGRE' : '';
-    const nameMax = colS - nx - (tag ? 120 : 20);
-    const name = fitText(ctx, p.player_name, nameMax);
-    ctx.fillText(name, nx, y + rowH / 2 + 2);
-    ctx.font = '600 16px "Barlow Condensed"';
+    const tagFont = Math.round(nameFont * 0.56);
+    ctx.font = `700 ${tagFont}px "Barlow Condensed"`;
+    const tw = tag ? ctx.measureText(tag).width + 24 : 0;
+    ctx.font = `600 ${nameFont}px "Barlow"`;
+    const name = fitText(ctx, p.player_name, colS - nx - (tag ? tw + 26 : 16));
+    ctx.fillText(name, nx, nameY);
+    ctx.font = `600 ${posFont}px "Barlow Condensed"`;
     ctx.fillStyle = C.muted;
-    ctx.fillText((p.position_in_match || p.position || '').toUpperCase(), nx, y + rowH / 2 + 22);
+    ctx.fillText((p.position_in_match || p.position || '').toUpperCase(), nx, nameY + posFont + 6);
     if (tag) {
-      ctx.font = `600 ${rowH >= 56 ? 28 : 24}px "Barlow"`;
+      ctx.font = `600 ${nameFont}px "Barlow"`;
       const tx = nx + ctx.measureText(name).width + 14;
-      ctx.font = '700 16px "Barlow Condensed"';
-      const tw = ctx.measureText(tag).width + 20;
-      roundRect(ctx, tx, y + rowH / 2 - 20, tw, 26, 13);
-      ctx.fillStyle = isCraque ? 'rgba(245,200,66,0.18)' : 'rgba(232,0,28,0.18)';
+      const th = Math.round(tagFont * 1.6);
+      roundRect(ctx, tx, nameY - nameFont * 0.72 - (th - nameFont * 0.72) / 2, tw, th, th / 2);
+      ctx.fillStyle = isCraque ? 'rgba(245,200,66,0.2)' : 'rgba(232,0,28,0.2)';
       ctx.fill();
+      ctx.font = `700 ${tagFont}px "Barlow Condensed"`;
       ctx.fillStyle = isCraque ? C.gold : '#ff3d4f';
       ctx.textAlign = 'center';
-      ctx.fillText(tag, tx + tw / 2, y + rowH / 2 - 1);
+      ctx.textBaseline = 'middle';
+      ctx.fillText(tag, tx + tw / 2, nameY - nameFont * 0.36);
     }
 
     // Notas
     const py2 = y + (rowH - pillH) / 2;
-    pill(ctx, colS, py2, 96, pillH, p.simoes_rating);
-    pill(ctx, colB, py2, 96, pillH, p.bruninho_rating);
-    pill(ctx, colM, py2, 96, pillH, p.average_rating, { big: true });
+    pill(ctx, colS, py2, pillW, pillH, p.simoes_rating);
+    pill(ctx, colB, py2, pillW, pillH, p.bruninho_rating);
+    pill(ctx, colM, py2, pillW, pillH, p.average_rating, { big: true });
   });
 
   // ── Rodapé: canal do YouTube (grande, centralizado) ──
   ctx.fillStyle = C.border;
   ctx.fillRect(PAD, footerTop, W - PAD * 2, 2);
   ctx.textBaseline = 'middle';
-  ctx.font = '700 40px "Barlow Condensed"';
+  ctx.font = '700 48px "Barlow Condensed"';
   const ytText = 'youtube.com/@BruninhoeSimoes';
-  const iconW = 64, iconH = 46, gapIcon = 18;
+  const iconW = 78, iconH = 56, gapIcon = 20;
   const ytW = iconW + gapIcon + ctx.measureText(ytText).width;
   const ytX = (W - ytW) / 2;
-  const ytY = footerTop + 50;
+  const ytY = footerTop + 56;
   // ícone do YouTube (retângulo vermelho + triângulo branco)
-  roundRect(ctx, ytX, ytY - iconH / 2, iconW, iconH, 12);
+  roundRect(ctx, ytX, ytY - iconH / 2, iconW, iconH, 14);
   ctx.fillStyle = '#ff0000';
   ctx.fill();
   ctx.beginPath();
