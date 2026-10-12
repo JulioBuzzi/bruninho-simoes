@@ -45,7 +45,6 @@ export default function RatingLineChart({ games, title, subtitle = 'Clique no es
       </div>
       <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', letterSpacing: '0.04em', paddingLeft: 8, marginTop: -6, marginBottom: 8 }}>
         {subtitle}
-        {wide && <span style={{ color: 'var(--text-secondary)' }}> · ← arraste para ver os jogos anteriores</span>}
       </div>
       <div ref={scrollRef} style={{ overflowX: 'auto' }}>
         <svg viewBox={`0 0 ${W} ${H}`} style={{ width: wide ? W : '100%', minWidth: wide ? W : Math.max(400, games.length * 80), height: wide ? H : 'auto', display: 'block' }}>
