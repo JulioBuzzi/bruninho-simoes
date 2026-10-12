@@ -90,6 +90,11 @@ export default function MatchCard({ match }) {
               <span style={{ fontFamily: 'Bebas Neue', fontSize: 32, color: result.color, minWidth: 24, textAlign: 'center' }}>
                 {match.opponent_goals}
               </span>
+              {match.had_penalties && (
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', whiteSpace: 'nowrap' }}>
+                  (pên. {match.flamengo_penalties}×{match.opponent_penalties})
+                </span>
+              )}
             </div>
 
             {/* Opponent */}
