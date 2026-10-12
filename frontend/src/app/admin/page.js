@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { matchesApi, playersApi, teamsApi } from '../../lib/api';
-import RatingsTab from './ratingsTab';
+import RatingsTab from './ratingTab';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import toast from 'react-hot-toast';
 import { Plus, LogOut, Save, Trash2, Pencil, X } from 'lucide-react';
