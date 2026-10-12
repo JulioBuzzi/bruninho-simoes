@@ -6,6 +6,7 @@ import { playersApi } from '../../../lib/api';
 import { formatMatchDate } from '../../../lib/dateUtils';
 import RatingBadge from '../../../components/RatingBadge';
 import LoadingSpinner from '../../../components/LoadingSpinner';
+import RatingLineChart from '../../../components/RatingLineChart';
 import { ArrowLeft, Target, Zap, Star, TrendingUp, TrendingDown } from 'lucide-react';
 
 // Stat card — fixed height so all cards align
@@ -57,6 +58,12 @@ export default function PlayerDetailPage() {
 
   const { player, stats, history } = data;
 
+  // Média jogo a jogo, em ordem cronológica (o histórico vem do mais recente pro mais antigo)
+  const chartGames = [...history]
+    .filter(h => h.average_rating !== null)
+    .reverse()
+    .map(h => ({ ...h, avg_rating: h.average_rating }));
+
   const statCards = [
     { icon: <TrendingUp size={20} color="var(--text-muted)" />, label: 'Jogos', value: pluralJogos(stats.games) },
     { icon: '🎙️', label: 'Média Bruninho', value: stats.avg_bruninho ? Number(stats.avg_bruninho).toFixed(2) : '—' },
@@ -101,9 +108,20 @@ export default function PlayerDetailPage() {
       </div>
 
       {/* Stats grid — all same height */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10, marginBottom: 32 }}>
+      <div className="stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10, marginBottom: 32 }}>
         {statCards.map(s => <StatCard key={s.label} {...s} />)}
       </div>
+      {chartGames.length > 0 && (
+        <>
+          <h2 style={{ fontSize: 32, marginBottom: 16 }}>Média <span style={{ color: 'var(--red-primary)' }}>Jogo a Jogo</span></h2>
+          <RatingLineChart
+            games={chartGames}
+            title={`Temporada ${currentYear}`}
+            subtitle="Média do jogador em cada jogo · clique no escudo do adversário para abrir o jogo"
+            scrollToEnd
+          />
+        </>
+      )}
       <style>{`@media(max-width:900px){.stat-grid{grid-template-columns:repeat(4,1fr)!important}}@media(max-width:560px){.stat-grid{grid-template-columns:repeat(3,1fr)!important}}`}</style>
 
       {/* Match history */}

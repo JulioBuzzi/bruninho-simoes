@@ -6,6 +6,7 @@ import { formatMatchDate } from '../../../lib/dateUtils';
 import { matchesApi } from '../../../lib/api';
 import RatingBadge from '../../../components/RatingBadge';
 import LoadingSpinner from '../../../components/LoadingSpinner';
+import ShareCardButton from '../../../components/ShareCardButton';
 import { ArrowLeft, Star, Target, Zap, Home, Plane } from 'lucide-react';
 
 export default function MatchDetailPage() {
@@ -163,7 +164,10 @@ export default function MatchDetailPage() {
       </div>
 
       {/* Players table */}
-      <h2 style={{ fontSize: 32, marginBottom: 20 }}>Notas dos <span style={{ color: 'var(--red-primary)' }}>Titulares</span></h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
+        <h2 style={{ fontSize: 32 }}>Notas dos <span style={{ color: 'var(--red-primary)' }}>Titulares</span></h2>
+        {rated.length > 0 && <ShareCardButton data={data} />}
+      </div>
       {players.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>Escalação e notas ainda não foram cadastradas para este jogo.</div>
       ) : (
