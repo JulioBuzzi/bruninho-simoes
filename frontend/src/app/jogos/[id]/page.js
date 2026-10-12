@@ -32,7 +32,6 @@ export default function MatchDetailPage() {
   const resultColor = flaWon ? 'var(--green)' : drew ? 'var(--gold)' : 'var(--red-primary)';
   const resultLabel = flaWon ? 'VITÓRIA' : drew ? 'EMPATE' : 'DERROTA';
 
-  // Craque e bagre — calculados uma vez aqui, fora do map
   const rated        = players.filter(p => p.average_rating !== null);
   const worstRating  = rated.length ? Math.min(...rated.map(p => parseFloat(p.average_rating))) : null;
   const bestRating   = rated.length ? Math.max(...rated.map(p => parseFloat(p.average_rating))) : null;
@@ -46,7 +45,7 @@ export default function MatchDetailPage() {
         <ArrowLeft size={16} /> Todos os jogos
       </Link>
 
-      {/* Match header card */}
+      {/* Cabeçalho do jogo */}
       <div className="card" style={{ marginBottom: 28, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: resultColor }} />
 
@@ -65,7 +64,7 @@ export default function MatchDetailPage() {
           </div>
         </div>
 
-        {/* Score */}
+        {/* Placar */}
         <div className="match-score-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32, padding: '8px 0 24px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 64, height: 64, borderRadius: 12, overflow: 'hidden', background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -96,7 +95,7 @@ export default function MatchDetailPage() {
         {/* 4 highlight cards */}
         {highlights && (
           <div className="match-highlights" style={{ borderTop: '1px solid var(--border)', paddingTop: 20, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-            {/* Craque(s) */}
+            {/* Craques */}
             <div style={{ background: 'rgba(245,200,66,0.06)', border: '1px solid rgba(245,200,66,0.2)', borderRadius: 10, padding: '16px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, textAlign: 'center', minHeight: 110 }}>
               <Star size={18} color="var(--gold)" fill="var(--gold)" />
               <div style={{ fontSize: 10, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--gold)' }}>Craque{craqueNames.length > 1 ? 's' : ''} do Jogo</div>
@@ -134,7 +133,7 @@ export default function MatchDetailPage() {
           </div>
         )}
 
-        {/* Goals & Assists */}
+        {/* Gols e Assistencias */}
         {(goals?.length > 0 || assists?.length > 0) && (
           <div style={{ display: 'flex', gap: 24, marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
             {goals?.length > 0 && (
@@ -163,7 +162,7 @@ export default function MatchDetailPage() {
         )}
       </div>
 
-      {/* Players table */}
+      {/* Tabela dos jogadores */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
         <h2 style={{ fontSize: 32 }}>Notas dos <span style={{ color: 'var(--red-primary)' }}>Titulares</span></h2>
         {rated.length > 0 && <ShareCardButton data={data} />}
@@ -178,7 +177,7 @@ export default function MatchDetailPage() {
             ))}
           </div>
           {players.map(player => {
-            // Computed per-row using pre-built Sets
+            // Calculado por linha utilizando conjuntos pré-construídos
             const isBagre  = bagreIds.has(player.player_id);
             const isCraque = craqueIds.has(player.player_id);
             return (
