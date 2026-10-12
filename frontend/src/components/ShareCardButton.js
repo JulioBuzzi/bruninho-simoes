@@ -9,7 +9,7 @@ function slug(s) {
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
-// Botão "Compartilhar notas": gera a imagem e abre uma prévia com Baixar / Compartilhar
+// Botão "Compartilhar notas": gera a imagem (story 1080x1920) e abre uma prévia com o botão Baixar
 export default function ShareCardButton({ data }) {
   const [open, setOpen]       = useState(false);
   const [loading, setLoading] = useState(false);
@@ -23,6 +23,7 @@ export default function ShareCardButton({ data }) {
 
   const handleOpen = async () => {
     setOpen(true);
+    if (blob) return; // já gerada: reabre na hora
     setLoading(true);
     setError(false);
     try {
@@ -52,24 +53,14 @@ export default function ShareCardButton({ data }) {
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = old; };
   }, [open]);
 
-  const file = blob ? new File([blob], fileName, { type: 'image/png' }) : null;
-  const canShareFile = typeof navigator !== 'undefined' && !!file && !!navigator.canShare && navigator.canShare({ files: [file] });
-
-  const handleShare = async () => {
-    try {
-      await navigator.share({
-        files: [file],
-        title: `Notas: Flamengo ${match.flamengo_goals} x ${match.opponent_goals} ${match.opponent_name}`,
-        text: 'Notas do Bruninho e Simões 🔴⚫',
-      });
-    } catch { /* usuário cancelou */ }
-  };
-
+  // Download direto do PNG já gerado em memória (sem novo processamento, sem perder qualidade)
   const handleDownload = () => {
     const a = document.createElement('a');
     a.href = url;
     a.download = fileName;
+    document.body.appendChild(a);
     a.click();
+    a.remove();
   };
 
   return (
@@ -90,7 +81,7 @@ export default function ShareCardButton({ data }) {
             onClick={e => e.stopPropagation()}
             className="fade-in"
             style={{
-              width: '100%', maxWidth: 420, maxHeight: '94vh',
+              width: '100%', minWidth: 0, maxWidth: 420, maxHeight: '94vh',
               background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
               display: 'flex', flexDirection: 'column', overflow: 'hidden',
             }}
@@ -102,22 +93,23 @@ export default function ShareCardButton({ data }) {
               </button>
             </div>
 
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 16, display: 'flex', justifyContent: 'center', overscrollBehavior: 'contain' }}>
+            <div style={{ flex: 1, minHeight: 0, minWidth: 0, overflowY: 'auto', overflowX: 'hidden', padding: 16, display: 'flex', justifyContent: 'center', overscrollBehavior: 'contain' }}>
               {loading && <p style={{ padding: '60px 0', color: 'var(--text-muted)', fontFamily: 'Barlow Condensed', letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: 13 }}>Gerando imagem...</p>}
               {error && <p style={{ padding: '60px 8px', color: 'var(--text-muted)', textAlign: 'center' }}>Não foi possível gerar a imagem. Tente novamente.</p>}
               {url && !loading && (
-                <img src={url} alt="Prévia da imagem com as notas (formato story)" style={{ maxWidth: '100%', maxHeight: '62vh', width: 'auto', height: 'auto', borderRadius: 8, border: '1px solid var(--border)' }} />
+                <div style={{ width: '100%', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                  <img src={url} alt="Prévia da imagem com as notas (formato story)" style={{ maxWidth: '100%', maxHeight: '62vh', width: 'auto', height: 'auto', borderRadius: 8, border: '1px solid var(--border)' }} />
+                  {/* Plano B no celular (ex.: navegador dentro do Instagram não permite download) */}
+                  <p className="touch-only" style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', fontFamily: 'Barlow Condensed', letterSpacing: '0.03em' }}>
+                    Se não baixar, segure o dedo na imagem e toque em “Salvar imagem”.
+                  </p>
+                </div>
               )}
             </div>
 
             {url && !loading && (
               <div style={{ display: 'flex', gap: 10, padding: '12px 16px', borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
-                {canShareFile && (
-                  <button type="button" className="btn btn-primary" onClick={handleShare} style={{ flex: 1, justifyContent: 'center' }}>
-                    <Share2 size={16} /> Compartilhar
-                  </button>
-                )}
-                <button type="button" className={canShareFile ? 'btn btn-ghost' : 'btn btn-primary'} onClick={handleDownload} style={{ flex: 1, justifyContent: 'center' }}>
+                <button type="button" className="btn btn-primary" onClick={handleDownload} style={{ flex: 1, justifyContent: 'center' }}>
                   <Download size={16} /> Baixar imagem
                 </button>
               </div>

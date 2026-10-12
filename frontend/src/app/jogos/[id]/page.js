@@ -66,7 +66,7 @@ export default function MatchDetailPage() {
         </div>
 
         {/* Score */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32, padding: '8px 0 24px' }}>
+        <div className="match-score-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32, padding: '8px 0 24px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 64, height: 64, borderRadius: 12, overflow: 'hidden', background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <img src="/logos/flamengo.png" alt="Flamengo" style={{ width: 52, height: 52, objectFit: 'contain' }} onError={e => { e.target.style.display = 'none'; }} />
@@ -74,7 +74,7 @@ export default function MatchDetailPage() {
             <span style={{ fontFamily: 'Bebas Neue', fontSize: 20 }}>Flamengo</span>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: 'Bebas Neue', fontSize: 72, letterSpacing: '0.05em', color: resultColor, lineHeight: 1 }}>
+            <div className="match-score" style={{ fontFamily: 'Bebas Neue', fontSize: 72, letterSpacing: '0.05em', color: resultColor, lineHeight: 1, whiteSpace: 'nowrap' }}>
               {match.flamengo_goals} <span style={{ color: 'var(--text-muted)', fontSize: 40 }}>×</span> {match.opponent_goals}
             </div>
             {match.had_penalties && (
@@ -95,7 +95,7 @@ export default function MatchDetailPage() {
 
         {/* 4 highlight cards */}
         {highlights && (
-          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          <div className="match-highlights" style={{ borderTop: '1px solid var(--border)', paddingTop: 20, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
             {/* Craque(s) */}
             <div style={{ background: 'rgba(245,200,66,0.06)', border: '1px solid rgba(245,200,66,0.2)', borderRadius: 10, padding: '16px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, textAlign: 'center', minHeight: 110 }}>
               <Star size={18} color="var(--gold)" fill="var(--gold)" />
@@ -172,7 +172,7 @@ export default function MatchDetailPage() {
         <div className="card" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>Escalação e notas ainda não foram cadastradas para este jogo.</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px 100px', padding: '8px 16px', gap: 8 }}>
+          <div className="match-player-grid match-head" style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px 100px', padding: '8px 16px', gap: 8 }}>
             {['Jogador', 'Simões', 'Bruninho', 'Média'].map(h => (
               <span key={h} style={{ fontSize: 11, fontFamily: 'Barlow Condensed', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', textAlign: h === 'Jogador' ? 'left' : 'center' }}>{h}</span>
             ))}
@@ -184,8 +184,8 @@ export default function MatchDetailPage() {
             return (
               <Link key={player.player_id} href={`/jogadores/${player.player_id}`}>
                 <div className="card" style={{ cursor: 'pointer' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px 100px', alignItems: 'center', gap: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div className="match-player-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px 100px', alignItems: 'center', gap: 8 }}>
+                    <div className="match-player-name" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ width: 40, height: 40, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {player.photo_url
                           ? <img src={player.photo_url} alt={player.player_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />

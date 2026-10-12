@@ -284,3 +284,17 @@ tr:hover .num-button {
     border-color: var(--border);
   }
 }
+
+/* Texto que só aparece em telas de toque (celular) */
+.touch-only { display: none; }
+@media (hover: none) { .touch-only { display: block; } }
+
+/* Página do jogo no celular: cartões em 2x2 e colunas de nota estreitas (antes a página passava da tela) */
+@media (max-width: 640px) {
+  .match-highlights { grid-template-columns: repeat(2, 1fr) !important; }
+  .match-score-row { gap: 14px !important; }
+  .match-score { font-size: 56px !important; }
+  .match-head span { font-size: 9px !important; letter-spacing: 0 !important; }
+  .match-player-grid { grid-template-columns: minmax(0, 1fr) 48px 48px 48px !important; gap: 4px !important; }
+  .match-player-name { min-width: 0; flex-wrap: wrap; row-gap: 4px; gap: 8px !important; }
+}

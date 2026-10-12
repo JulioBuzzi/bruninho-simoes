@@ -99,6 +99,17 @@ function hexA(hex, a) {
   return `rgba(${(v >> 16) & 255},${(v >> 8) & 255},${v & 255},${a})`;
 }
 
+// Ordem das posições na imagem: goleiro, lateral direito, zagueiros, lateral esquerdo, volantes, meias, atacantes
+const POSITION_ORDER = {
+  'Goleiro': 1, 'Lateral Direito': 2, 'Zagueiro': 3, 'Lateral Esquerdo': 4,
+  'Volante': 5, 'Meia': 6, 'Atacante': 7,
+};
+function sortByPosition(list) {
+  // sort estável: dentro da mesma posição mantém a ordem que veio da API
+  return [...list].sort((a, b) =>
+    (POSITION_ORDER[a.position_in_match || a.position] ?? 99) - (POSITION_ORDER[b.position_in_match || b.position] ?? 99));
+}
+
 function formatDate(raw) {
   const s = String(raw || '').slice(0, 10).split('-');
   return s.length === 3 ? `${s[2]}/${s[1]}/${s[0]}` : '';
@@ -109,7 +120,8 @@ function formatDate(raw) {
  * Retorna Promise<Blob> (image/png)
  */
 export async function generateMatchCard(data) {
-  const { match, players, highlights } = data;
+  const { match, highlights } = data;
+  const players = sortByPosition(data.players);
 
   // Garante que as fontes do site estão carregadas antes de desenhar
   if (typeof document !== 'undefined' && document.fonts) {
@@ -151,36 +163,37 @@ export async function generateMatchCard(data) {
   const PAD = 56;
   const T = SAFE_TOP; // tudo começa abaixo da faixa livre do topo
 
-  // ── Cabeçalho centralizado: marca em cima, campeonato/data embaixo ──
+  // ── Cabeçalho centralizado (grande): marca em cima, campeonato/data embaixo ──
   ctx.textBaseline = 'alphabetic';
-  ctx.font = '52px "Bebas Neue"';
+  ctx.font = '76px "Bebas Neue"';
   const part1 = 'BRUNINHO ', part2 = '&', part3 = ' SIMÕES';
   const textW = ctx.measureText(part1 + part2 + part3).width;
-  const logoW = brand ? 76 + 18 : 0;
+  const brandSize = 104;
+  const logoW = brand ? brandSize + 22 : 0;
   let hx = (W - (logoW + textW)) / 2;
-  if (brand) drawCover(ctx, brand, hx, T, 76, 18);
+  if (brand) drawCover(ctx, brand, hx, T, brandSize, 22);
   hx += logoW;
   ctx.textAlign = 'left';
   ctx.fillStyle = C.text;
-  ctx.fillText(part1, hx, T + 48);
+  ctx.fillText(part1, hx, T + 68);
   ctx.fillStyle = C.red;
-  ctx.fillText(part2, hx + ctx.measureText(part1).width, T + 48);
+  ctx.fillText(part2, hx + ctx.measureText(part1).width, T + 68);
   ctx.fillStyle = C.text;
-  ctx.fillText(part3, hx + ctx.measureText(part1 + part2).width, T + 48);
-  ctx.font = '700 18px "Barlow Condensed"';
+  ctx.fillText(part3, hx + ctx.measureText(part1 + part2).width, T + 68);
+  ctx.font = '700 24px "Barlow Condensed"';
   ctx.fillStyle = C.muted;
-  ctx.fillText('NOTAS DO TENGO', hx, T + 72);
+  ctx.fillText('NOTAS DO TENGO', hx + 2, T + 100);
 
   ctx.textAlign = 'center';
-  ctx.font = '700 28px "Barlow Condensed"';
+  ctx.font = '700 36px "Barlow Condensed"';
   ctx.fillStyle = C.text2;
   const champLine = `${(match.championship || '').toUpperCase()}${match.round ? ' · ' + match.round.toUpperCase() : ''}`;
-  ctx.fillText(`${champLine}   •   ${formatDate(match.match_date)} · ${match.is_home ? 'CASA' : 'FORA'}`, W / 2, T + 128);
+  ctx.fillText(fitText(ctx, `${champLine}   •   ${formatDate(match.match_date)} · ${match.is_home ? 'CASA' : 'FORA'}`, W - PAD * 2), W / 2, T + 168);
 
   // ── Placar ──
   const fla = match.flamengo_goals, opp = match.opponent_goals;
   const resColor = fla > opp ? C.green : fla < opp ? C.red : C.gold;
-  const scoreY = T + 170;
+  const scoreY = T + 205;
   const logoSize = 150;
   const drawTeam = (img, name, short, cx) => {
     roundRect(ctx, cx - logoSize / 2 - 14, scoreY, logoSize + 28, logoSize + 28, 24);
@@ -222,7 +235,7 @@ export async function generateMatchCard(data) {
   }
 
   // ── Destaques: craque, média, Simões, Bruninho ──
-  const hlY = T + 440, hlH = 120, gap = 16;
+  const hlY = T + 465, hlH = 120, gap = 16;
   const hlW = (W - PAD * 2 - gap * 3) / 4;
   const boxes = [
     { label: craqueNames.length > 1 ? 'CRAQUES' : 'CRAQUE', value: craqueNames.length ? craqueNames.join(', ') : '—', sub: best !== null ? best.toFixed(1) : '', color: C.gold, small: true },
@@ -272,7 +285,7 @@ export async function generateMatchCard(data) {
 
   // ── Tabela de notas ──
   const tableTop = hlY + hlH + 54;
-  const footerTop = H - SAFE_BOTTOM - 70;
+  const footerTop = H - SAFE_BOTTOM - 90;
   const colS = W - PAD - 330, colB = W - PAD - 210, colM = W - PAD - 96;
   ctx.font = '700 18px "Barlow Condensed"';
   ctx.fillStyle = C.muted;
@@ -284,7 +297,7 @@ export async function generateMatchCard(data) {
   ctx.fillText('MÉDIA', colM + 48, tableTop);
 
   const listTop = tableTop + 16;
-  const rowGap = 8;
+  const rowGap = 6;
   const rowH = Math.min(76, Math.floor((footerTop - 14 - listTop) / Math.max(players.length, 1)) - rowGap);
   const photoSize = rowH - 14;
   const pillH = rowH - 16;
@@ -349,17 +362,30 @@ export async function generateMatchCard(data) {
     pill(ctx, colM, py2, 96, pillH, p.average_rating, { big: true });
   });
 
-  // ── Rodapé ──
+  // ── Rodapé: canal do YouTube (grande, centralizado) ──
   ctx.fillStyle = C.border;
   ctx.fillRect(PAD, footerTop, W - PAD * 2, 2);
-  ctx.textBaseline = 'alphabetic';
-  ctx.font = '700 22px "Barlow Condensed"';
+  ctx.textBaseline = 'middle';
+  ctx.font = '700 40px "Barlow Condensed"';
+  const ytText = 'youtube.com/@BruninhoeSimoes';
+  const iconW = 64, iconH = 46, gapIcon = 18;
+  const ytW = iconW + gapIcon + ctx.measureText(ytText).width;
+  const ytX = (W - ytW) / 2;
+  const ytY = footerTop + 50;
+  // ícone do YouTube (retângulo vermelho + triângulo branco)
+  roundRect(ctx, ytX, ytY - iconH / 2, iconW, iconH, 12);
+  ctx.fillStyle = '#ff0000';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(ytX + iconW * 0.40, ytY - iconH * 0.24);
+  ctx.lineTo(ytX + iconW * 0.40, ytY + iconH * 0.24);
+  ctx.lineTo(ytX + iconW * 0.68, ytY);
+  ctx.closePath();
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
   ctx.textAlign = 'left';
-  ctx.fillStyle = C.text2;
-  ctx.fillText('bruninho-simoes.vercel.app', PAD, footerTop + 46);
-  ctx.textAlign = 'right';
-  ctx.fillStyle = '#ff3d3d';
-  ctx.fillText('▶ youtube.com/@BruninhoeSimoes', W - PAD, footerTop + 46);
+  ctx.fillStyle = C.text;
+  ctx.fillText(ytText, ytX + iconW + gapIcon, ytY + 2);
 
   return new Promise((resolve, reject) => {
     try {
