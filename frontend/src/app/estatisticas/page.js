@@ -143,7 +143,7 @@ function RankingTable({ ranking, showMinNote = true, totalMatches, onOpen }) {
     { key: 'bru', label: 'Bruninho', align: 'left',   w: 90  },
     { key: 'sim', label: 'Simões',   align: 'left',   w: 90  },
     { key: 'med', label: 'Média',    align: 'left',   w: 90  },
-    { key: 'mel', label: 'Maior Nota',   align: 'left',   w: 90  },
+    { key: 'mel', label: 'Maior Nota',   align: 'left',   w: 100  },
     { key: 'cra', label: 'Craques',  align: 'left',   w: 80  },
     { key: 'bag', label: 'Bagres',   align: 'left',   w: 70  },
   ];
